@@ -3,31 +3,33 @@
 //! One spec per trait covers every arity up to 16 (the serde ceiling; std
 //! stops at 12 and there is no real-world demand beyond 16 — the lattice
 //! specs cap at 12 because their `PartialOrd` supertrait does): the `()`
-//! range generator mints the component generics, `where{@all_fresh: ...}`
-//! constrains them, the `impl{(A@..,)}` variadic template binds every
-//! component, and the body's `@(...)..` repeat block emits one copy per
-//! component (name reference `@A`, index cursor `@0`). The additive and
-//! multiplicative sides share one block / one path prefix / one signature
-//! source. Tuples form rings when their components do, but never fields
-//! (zero divisors).
+//! range generator mints the component generics, `where{@0..: ...}`
+//! constrains every component from the first on (the range directly names
+//! the generated components — no fresh-variable indirection), the
+//! `impl{(A@..,)}` variadic template binds every component, and the body's
+//! `@(...)..` repeat block emits one copy per component (name reference
+//! `@A`, index cursor `@0`). The additive and multiplicative sides share
+//! one block / one signature source. Tuples form rings when their components
+//! do, but never fields (zero divisors).
 //!
 //! Note: std only derives `PartialEq`/`Debug`/etc. for tuples up to arity
 //! 12, so 13..=16 tuples must be compared component-wise downstream; the
 //! tower impls here are all component-wise and unaffected.
 //!
-use batch_impl::batch_impl_only;
+use batch_impl::{batch_impl_only, batch_trait};
 
 use crate::op::{Additive, Multiplicative};
 
 use crate::tower::{
-    AbelianGroup, CommutativeRing, Field, Group, JoinSemilattice, Lattice, Loop, Magma,
-    MeetSemilattice, Module, Monoid, Quasigroup, Ring, Semigroup, Semiring, VectorSpace,
+    AbelianGroup, CommutativeRing, Field, FiniteDimInnerSpace, FiniteDimVectorSpace, FreeModule,
+    Group, InnerSpace, JoinSemilattice, Lattice, Loop, Magma, MeetSemilattice, Module, Monoid,
+    NormedSpace, Quasigroup, Ring, Semigroup, Semiring, VectorSpace,
 };
 
 #[batch_impl_only(
     [
-        Magma<Additive>where{@all_fresh: Magma<Additive>},
-        Magma<Multiplicative>where{@all_fresh: Magma<Multiplicative>}
+        Magma<Additive>where{@0..: Magma<Additive>},
+        Magma<Multiplicative>where{@0..: Magma<Multiplicative>}
     ]^()^1..=16 impl{(A@..,)} #combine{( @(@A::combine(&self.@0, &rhs.@0),).. )},
 )]
 trait Magma<Op: Operator> {
@@ -36,16 +38,8 @@ trait Magma<Op: Operator> {
 
 #[batch_impl_only(
     [
-        Semigroup<Additive> where{@all_fresh: Semigroup<Additive>},
-        Semigroup<Multiplicative>  where{@all_fresh: Semigroup<Multiplicative>},
-    ]^()^1..=16
-)]
-trait Semigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
-    [
-        Monoid<Additive> where{@all_fresh: Monoid<Additive>},
-        Monoid<Multiplicative> where{@all_fresh: Monoid<Multiplicative>}
+        Monoid<Additive> where{@0..: Monoid<Additive>},
+        Monoid<Multiplicative> where{@0..: Monoid<Multiplicative>}
     ]^()^1..=16 impl{(A@..,)} #identity{( @(@A::identity(),).. )},
 )]
 trait Monoid<Op: Operator>: Semigroup<Op> {
@@ -57,43 +51,11 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 // additive-only too (`(R, ·)` is not a quasigroup: zero absorbs).
 
 #[batch_impl_only(
-    Quasigroup<Additive> ()^1..=16 where{@all_fresh: Quasigroup<Additive>},
-)]
-trait Quasigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
-    Loop<Additive> ()^1..=16 where{@all_fresh: Loop<Additive>},
-)]
-trait Loop<Op: Operator>: Quasigroup<Op> + Monoid<Op> {}
-
-#[batch_impl_only(
-    Group<Additive> ()^1..=16 where{@all_fresh: Group<Additive>} impl{(A@..,)} #inverse{( @(@A::inverse(&self.@0),).. )},
+    Group<Additive> ()^1..=16 where{@0..: Group<Additive>} impl{(A@..,)} #inverse{( @(@A::inverse(&self.@0),).. )},
 )]
 trait Group<Op: Operator>: Loop<Op> {
     fn inverse(&self) -> Self;
 }
-
-#[batch_impl_only(
-    AbelianGroup<Additive> ()^1..=16 where{@all_fresh: AbelianGroup<Additive>},
-)]
-trait AbelianGroup<Op: Operator>: Group<Op> {}
-
-// ---- semiring ladder: tuples inherit the ring levels, never Field ----
-
-#[batch_impl_only(
-    Semiring<Additive, Multiplicative> ()^1..=16 where{@all_fresh: Semiring<Additive, Multiplicative>},
-)]
-trait Semiring<Oa: Operator, Om: Operator>: Monoid<Oa> + Monoid<Om> {}
-
-#[batch_impl_only(
-    Ring<Additive, Multiplicative> ()^1..=16 where{@all_fresh: Ring<Additive, Multiplicative>},
-)]
-trait Ring<Oa: Operator, Om: Operator>: Semiring<Oa, Om> + AbelianGroup<Oa> {}
-
-#[batch_impl_only(
-    CommutativeRing<Additive, Multiplicative> ()^1..=16 where{@all_fresh: CommutativeRing<Additive, Multiplicative>},
-)]
-trait CommutativeRing<Oa: Operator, Om: Operator>: Ring<Oa, Om> {}
 
 // ---- module level: componentwise scaling over the shared scalar ----
 // `@1..` (open range) selects every component from the second one on; their
@@ -102,7 +64,7 @@ trait CommutativeRing<Oa: Operator, Om: Operator>: Ring<Oa, Om> {}
 
 #[batch_impl_only(
     Module<Additive, Multiplicative> ()^1..=16 where{
-        @all_fresh: Module<Additive, Multiplicative>,
+        @0..: Module<Additive, Multiplicative>,
         @1..: Module<Additive, Multiplicative, Scalar = @0::Scalar>,
     } impl{(A@..,)} #Scalar{A0::Scalar} #scale{( @(@A::scale(&s, v.@0),).. )},
 )]
@@ -111,19 +73,25 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
     fn scale(s: &Self::Scalar, v: Self) -> Self;
 }
 
-// A tuple of vector spaces over one field is a vector space (all components
-// share the scalar; the field law is the trait-level `where` on `Self`, so
-// it rides a hand-written predicate here — batch-impl does not substitute
-// the trait's own generic params in inherited where clauses yet).
+// Marker levels need no directives and no duplicated trait signatures:
+// one `batch_trait!` segment per trait.
 
-#[batch_impl_only(
-    VectorSpace<Additive, Multiplicative> ()^1..=16 where{
-        @all_fresh: VectorSpace<Additive, Multiplicative>,
+batch_trait! {
+    Semigroup: [Semigroup<Additive> where{@0..: Semigroup<Additive>}, Semigroup<Multiplicative> where{@0..: Semigroup<Multiplicative>}]^()^1..=16;
+    Quasigroup: Quasigroup<Additive> ()^1..=16 where{@0..: Quasigroup<Additive>};
+    Loop: Loop<Additive> ()^1..=16 where{@0..: Loop<Additive>};
+    AbelianGroup: AbelianGroup<Additive> ()^1..=16 where{@0..: AbelianGroup<Additive>};
+    Semiring: Semiring<Additive, Multiplicative> ()^1..=16 where{@0..: Semiring<Additive, Multiplicative>};
+    Ring: Ring<Additive, Multiplicative> ()^1..=16 where{@0..: Ring<Additive, Multiplicative>};
+    CommutativeRing: CommutativeRing<Additive, Multiplicative> ()^1..=16 where{@0..: CommutativeRing<Additive, Multiplicative>};
+    VectorSpace: VectorSpace<Additive, Multiplicative> ()^1..=16 where{
+        @0..: VectorSpace<Additive, Multiplicative>,
         @1..: VectorSpace<Additive, Multiplicative, Scalar = @0::Scalar>,
         Self::Scalar: Field<Additive, Multiplicative>,
-    },
-)]
-trait VectorSpace<Oa: Operator, Om: Operator>: Module<Oa, Om> {}
+    };
+    Lattice: ()^1..=12 where{@0..: Lattice};
+    FiniteDimInnerSpace: FiniteDimInnerSpace<Additive, Multiplicative> (f64,)^1..=16;
+}
 
 // ---- analytic layer: componentwise lattices, norms, finite dimension ----
 
@@ -133,23 +101,18 @@ trait VectorSpace<Oa: Operator, Om: Operator>: Module<Oa, Om> {}
 // run to 16.
 
 #[batch_impl_only(
-    ()^1..=12 where{@all_fresh: MeetSemilattice} impl{(A@..,)} #meet{( @(@A::meet(&self.@0, &other.@0),).. )},
+    ()^1..=12 where{@0..: MeetSemilattice} impl{(A@..,)} #meet{( @(@A::meet(&self.@0, &other.@0),).. )},
 )]
 trait MeetSemilattice: Sized + PartialOrd {
     fn meet(&self, other: &Self) -> Self;
 }
 
 #[batch_impl_only(
-    ()^1..=12 where{@all_fresh: JoinSemilattice} impl{(A@..,)} #join{( @(@A::join(&self.@0, &other.@0),).. )},
+    ()^1..=12 where{@0..: JoinSemilattice} impl{(A@..,)} #join{( @(@A::join(&self.@0, &other.@0),).. )},
 )]
 trait JoinSemilattice: Sized + PartialOrd {
     fn join(&self, other: &Self) -> Self;
 }
-
-#[batch_impl_only(
-    ()^1..=12 where{@all_fresh: Lattice},
-)]
-trait Lattice: MeetSemilattice + JoinSemilattice {}
 
 // Normed/inner-product/finite-dimensional tuples: per-arity specs over the
 // concrete `f64` components (the scalar reduction `Σ xᵢ²` is not expressible
@@ -157,7 +120,6 @@ trait Lattice: MeetSemilattice + JoinSemilattice {}
 // equality chains) — the euclidean metric.
 
 #[batch_impl_only(
-    #crate::tower::NormedSpace:
     NormedSpace<Additive, Multiplicative> (f64,)^1..=16 impl{(A@..,)}
         #RealField{f64}
         #norm_squared{@(self.@0 * self.@0+)..0.}
@@ -170,7 +132,6 @@ trait NormedSpace<Oa: Operator, Om: Operator>: VectorSpace<Oa, Om> {
 }
 
 #[batch_impl_only(
-    #crate::tower::InnerSpace:
     InnerSpace<Additive, Multiplicative> (f64,)^1..=16 impl{(A@..,)}
         #inner_product{@(self.@0 * other.@0+)..0.},
 )]
@@ -179,7 +140,6 @@ trait InnerSpace<Oa: Operator, Om: Operator>: NormedSpace<Oa, Om> {
 }
 
 #[batch_impl_only(
-    #crate::tower::FiniteDimVectorSpace:
     FiniteDimVectorSpace<Additive, Multiplicative> (f64,)^1..=16 impl{(A@..,)}
         #dimension{@(1+)..0}
         #canonical_basis_element{( @(if _i == @0 { 1.0 } else { 0.0 },).. )}
@@ -191,19 +151,9 @@ trait FiniteDimVectorSpace<Oa: Operator, Om: Operator>: VectorSpace<Oa, Om> {
     fn dot(&self, other: &Self) -> Self::Scalar;
 }
 
-#[batch_impl_only(
-    #crate::tower::FiniteDimInnerSpace:
-    FiniteDimInnerSpace<Additive, Multiplicative> (f64,)^1..=16
-)]
-trait FiniteDimInnerSpace<Oa: Operator, Om: Operator>:
-    FiniteDimVectorSpace<Oa, Om> + InnerSpace<Oa, Om>
-{
-}
-
 // `(f64, ..., f64)` is the free module R^n: rank n, standard basis.
 
 #[batch_impl_only(
-    #crate::tower::FreeModule:
     FreeModule<Additive, Multiplicative> (f64,)^1..=16 impl{(A@..,)}
         #rank{@(1+)..0}
         #basis_element{( @(if _i == @0 { 1.0 } else { 0.0 },).. )}

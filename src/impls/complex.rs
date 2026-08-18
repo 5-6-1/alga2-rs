@@ -4,19 +4,18 @@
 //! (needs `T`'s additive inverse, so the multiplicative side is defined over
 //! rings); the field inverse is `conj(z)/|z|²`.
 
-use batch_impl::batch_impl_only;
+use batch_impl::{batch_impl_only, batch_trait};
 
 use crate::complex::Complex;
 use crate::op::{Additive, Multiplicative};
 use crate::tower::{
-    AbelianGroup, CommutativeRing, DivisionRing, Field, Group, Loop, Magma, Monoid, Quasigroup,
-    Real, Ring, Semigroup,
+    AbelianGroup, CommutativeRing, DivisionRing, Field, FieldExtension, Group, Loop, Magma, Module,
+    Monoid, Quasigroup, Real, Ring, Semigroup, Semiring, VectorSpace,
 };
 
 // ---- additive side: component-wise ----
 
 #[batch_impl_only(
-    #crate::tower::Magma:
     Magma<Additive> <T: Magma<Additive>> Complex<T> #combine{
         Complex::new(
             <T as Magma<Additive>>::combine(self.re(), rhs.re()),
@@ -29,13 +28,6 @@ trait Magma<Op: Operator> {
 }
 
 #[batch_impl_only(
-    #crate::tower::Semigroup:
-    Semigroup<Additive> <T: Semigroup<Additive>> Complex<T>,
-)]
-trait Semigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
-    #crate::tower::Monoid:
     Monoid<Additive> <T: Monoid<Additive>> Complex<T> #identity{
         Complex::new(
             <T as Monoid<Additive>>::identity(),
@@ -48,19 +40,6 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 }
 
 #[batch_impl_only(
-    #crate::tower::Quasigroup:
-    Quasigroup<Additive> <T: Quasigroup<Additive>> Complex<T>,
-)]
-trait Quasigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
-    #crate::tower::Loop:
-    Loop<Additive> <T: Loop<Additive>> Complex<T>,
-)]
-trait Loop<Op: Operator>: Quasigroup<Op> + Monoid<Op> {}
-
-#[batch_impl_only(
-    #crate::tower::Group:
     Group<Additive> <T: Group<Additive>> Complex<T> #inverse{
         Complex::new(
             <T as Group<Additive>>::inverse(self.re()),
@@ -72,16 +51,9 @@ trait Group<Op: Operator>: Loop<Op> {
     fn inverse(&self) -> Self;
 }
 
-#[batch_impl_only(
-    #crate::tower::AbelianGroup:
-    AbelianGroup<Additive> <T: AbelianGroup<Additive>> Complex<T>,
-)]
-trait AbelianGroup<Op: Operator>: Group<Op> {}
-
 // ---- multiplicative side: defined over rings (`ac−bd` needs the inverse) ----
 
 #[batch_impl_only(
-    #crate::tower::Magma:
     Magma<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T> #combine{
         Complex::new(
             <T as Magma<Additive>>::combine(
@@ -103,13 +75,6 @@ trait Magma<Op: Operator> {
 }
 
 #[batch_impl_only(
-    #crate::tower::Semigroup:
-    Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>,
-)]
-trait Semigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
-    #crate::tower::Monoid:
     Monoid<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T> #identity{
         Complex::new(
             <T as Monoid<Multiplicative>>::identity(),
@@ -126,22 +91,6 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 // The multiplicative side is defined over rings (see above), so
 // `Complex<T>: Semiring` requires `T: Ring` too — the multiplicative monoid
 // exists only there; `Complex<T>` is then actually a ring.
-
-#[batch_impl_only(
-    #crate::tower::Semiring:
-    Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>,
-)]
-trait Semiring<Oa: Operator, Om: Operator>: Monoid<Oa> + Monoid<Om> {}
-
-#[batch_impl_only(
-    Ring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>,
-)]
-trait Ring<Oa: Operator, Om: Operator>: Semiring<Oa, Om> + AbelianGroup<Oa> {}
-
-#[batch_impl_only(
-    CommutativeRing<Additive, Multiplicative> <T: CommutativeRing<Additive, Multiplicative>> Complex<T>,
-)]
-trait CommutativeRing<Oa: Operator, Om: Operator>: Ring<Oa, Om> {}
 
 #[batch_impl_only(
     DivisionRing<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T> #inv{
@@ -163,15 +112,9 @@ trait DivisionRing<Oa: Operator, Om: Operator>: Ring<Oa, Om> {
     fn inv(&self) -> Self;
 }
 
-#[batch_impl_only(
-    Field<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>,
-)]
-trait Field<Oa: Operator, Om: Operator>: DivisionRing<Oa, Om> + CommutativeRing<Oa, Om> {}
-
 // ---- module level: `Complex<T>` is a module over the real field `T` ----
 
 #[batch_impl_only(
-    #crate::tower::Module:
     Module<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>
         #Scalar{T}
         #scale{Complex::new(
@@ -184,14 +127,21 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
     fn scale(s: &Self::Scalar, v: Self) -> Self;
 }
 
-// The scalar `T` is a field, so `Complex<T>` is a vector space over it.
+// Marker levels (no directives, no duplicated signatures): `batch_trait!`.
 
-#[batch_impl_only(
-    #crate::tower::VectorSpace:
-    VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>
-        where{Self::Scalar: Field<Additive, Multiplicative>},
-)]
-trait VectorSpace<Oa: Operator, Om: Operator>: Module<Oa, Om> {}
+batch_trait! {
+    Semigroup: Semigroup<Additive> <T: Semigroup<Additive>> Complex<T>,
+        Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
+    Quasigroup: Quasigroup<Additive> <T: Quasigroup<Additive>> Complex<T>;
+    Loop: Loop<Additive> <T: Loop<Additive>> Complex<T>;
+    AbelianGroup: AbelianGroup<Additive> <T: AbelianGroup<Additive>> Complex<T>;
+    Semiring: Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
+    Ring: Ring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
+    CommutativeRing: CommutativeRing<Additive, Multiplicative> <T: CommutativeRing<Additive, Multiplicative>> Complex<T>;
+    Field: Field<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>;
+    VectorSpace: VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>
+        where{Self::Scalar: Field<Additive, Multiplicative>};
+}
 
 // ---- complex-field structure: `Complex<T>` over the real field `T` ----
 
@@ -215,7 +165,6 @@ trait ComplexField: Field<Additive, Multiplicative> {
 // ---- field extension: `Complex<T>` is a degree-2 extension of `T` ----
 
 #[batch_impl_only(
-    #crate::tower::FieldExtension:
     FieldExtension<Additive, Multiplicative> <T: Real + Copy> Complex<T>
         #BaseField{T}
         #degree{2}

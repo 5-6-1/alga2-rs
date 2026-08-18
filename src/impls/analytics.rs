@@ -13,7 +13,10 @@ use batch_impl::{batch_impl_only, batch_trait};
 use crate::complex::Complex;
 use crate::op::{Additive, Multiplicative};
 use crate::tower::{
-    ClosedAdd, ClosedMul, Group, Magma, Module, Monoid, OrderedField, Real, VectorSpace,
+    ClosedAdd, ClosedDiv, ClosedMul, ClosedNeg, ClosedSub, FiniteDimInnerSpace,
+    FiniteDimVectorSpace, Group, InnerSpace, JoinSemilattice, Lattice, Magma, MeetSemilattice,
+    Module, Monoid, NormedSpace, OrderedField, PositiveDefinite, Real, SubsetOf,
+    SymmetricBilinearForm, VectorSpace,
 };
 
 // ---- lattices: min/max on every numeric (and `bool`, ordered) ----
@@ -21,7 +24,6 @@ use crate::tower::{
 // ---- numeric subset embedding: lossless integer chains, then floats ----
 
 #[batch_impl_only(
-    #crate::tower::SubsetOf:
     [
         SubsetOf<u16> u8,
         SubsetOf<u32> u16,
@@ -70,7 +72,6 @@ trait Real: Field<Additive, Multiplicative> + PartialOrd + core::ops::Neg<Output
 // ---- normed / inner-product / finite-dimensional: floats ----
 
 #[batch_impl_only(
-    #crate::tower::NormedSpace:
     NormedSpace<Additive, Multiplicative>[
         @f* #RealField{Self} #norm_squared{*self * *self} #scale_real{*self * r},
         <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T> #RealField{T}
@@ -84,7 +85,6 @@ trait NormedSpace<Oa: Operator, Om: Operator>: VectorSpace<Oa, Om> {
 }
 
 #[batch_impl_only(
-    #crate::tower::InnerSpace:
     InnerSpace<Additive, Multiplicative> [
         @f* #inner_product{*self * *other},
         <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T>
@@ -96,7 +96,6 @@ trait InnerSpace<Oa: Operator, Om: Operator>: NormedSpace<Oa, Om> {
 }
 
 #[batch_impl_only(
-    #crate::tower::FiniteDimVectorSpace:
     FiniteDimVectorSpace<Additive, Multiplicative> [
         @f* #dimension{1} #canonical_basis_element{1.} #dot{*self * *other},
         <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T> #dimension{2}
@@ -123,33 +122,35 @@ trait FiniteDimVectorSpace<Oa: Operator, Om: Operator>: VectorSpace<Oa, Om> {
 }
 
 batch_trait! {
-    crate::tower::MeetSemilattice:[@num,bool]
+    MeetSemilattice:[@num,bool]
         {fn meet(&self, other: &Self) -> Self {
             (*self).min(*other)
         }};
-    crate::tower::JoinSemilattice: [@num,bool]
+    JoinSemilattice: [@num,bool]
         {fn join(&self, other: &Self) -> Self {
             (*self).max(*other)
         }};
-    crate::tower::Lattice: @num, bool;
-    crate::tower::ClosedAdd:@num;
-    crate::tower::ClosedSub:@num;
-    crate::tower::ClosedMul:@num;
-    crate::tower::ClosedDiv:@num;
-    crate::tower::FiniteDimInnerSpace:FiniteDimInnerSpace<Additive, Multiplicative> [@f*,Complex<f64>,Complex<f32>];
-    crate::tower::ClosedNeg:[@i*, @f*];
+    Lattice: @num, bool;
+    ClosedAdd:@num;
+    ClosedSub:@num;
+    ClosedMul:@num;
+    ClosedDiv:@num;
+    FiniteDimInnerSpace:FiniteDimInnerSpace<Additive, Multiplicative> [@f*,Complex<f64>,Complex<f32>];
+    ClosedNeg:[@i*, @f*];
+    OrderedField: OrderedField<Additive, Multiplicative> @f*;
+    SymmetricBilinearForm: <T: Real + Copy> T where{
+        T: VectorSpace<Additive, Multiplicative, Scalar = T>,
+    };
+    PositiveDefinite: <T: Real + Copy> T where{
+        T: VectorSpace<Additive, Multiplicative, Scalar = T>,
+        T: OrderedField<Additive, Multiplicative>,
+    };
 }
-
-// ---- ordered fields: the floats ----
-
-#[batch_impl_only(
-    #crate::tower::OrderedField:
-    OrderedField<Additive, Multiplicative> @f*,
-)]
-trait OrderedField<Oa: Operator, Om: Operator>: Field<Oa, Om> + PartialOrd {}
 
 // ---- bilinear forms: every ordered field is a positive-definite symmetric
 // ---- bilinear form over itself via multiplication (`B(u, v) = u·v`) ----
+// `BilinearForm` needs directives (it fills associated types), so it keeps
+// `batch_impl_only`; the marker refinements live in `batch_trait!` above.
 
 #[batch_impl_only(
     #crate::tower::BilinearForm:
@@ -162,23 +163,6 @@ trait BilinearForm {
     type Scalar;
     fn apply(&self, u: &Self::Space, v: &Self::Space) -> Self::Scalar;
 }
-
-#[batch_impl_only(
-    #crate::tower::SymmetricBilinearForm:
-    <T: Real + Copy> T where{
-        T: VectorSpace<Additive, Multiplicative, Scalar = T>,
-    },
-)]
-trait SymmetricBilinearForm: BilinearForm {}
-
-#[batch_impl_only(
-    #crate::tower::PositiveDefinite:
-    <T: Real + Copy> T where{
-        T: VectorSpace<Additive, Multiplicative, Scalar = T>,
-        T: OrderedField<Additive, Multiplicative>,
-    },
-)]
-trait PositiveDefinite: SymmetricBilinearForm {}
 
 // ---- euclidean / affine spaces: the numerics as their own spaces ----
 // Tuple caps at 12: `EuclideanSpace` requires `Clone + PartialEq`, which std

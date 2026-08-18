@@ -3,13 +3,14 @@
 //! not commute, a four-dimensional vector space over `T`, and a normed
 //! algebra (the euclidean norm of the four components).
 
-use batch_impl::batch_impl_only;
+use batch_impl::{batch_impl_only, batch_trait};
 
 use crate::op::{Additive, Multiplicative};
 use crate::quaternion::Quaternion;
 use crate::tower::{
-    AbelianGroup, ClosedAdd, ClosedMul, DivisionRing, Field, Group, InnerSpace, Loop, Magma,
-    Monoid, Quasigroup, Real, Ring, Semigroup,
+    AbelianGroup, ClosedAdd, ClosedMul, DivisionRing, Field, FiniteDimInnerSpace,
+    FiniteDimVectorSpace, Group, InnerSpace, Loop, Magma, Module, Monoid, NormedSpace, Quasigroup,
+    Real, Ring, Semigroup, Semiring, VectorSpace,
 };
 
 // ---- additive side: component-wise ----
@@ -29,11 +30,6 @@ trait Magma<Op: Operator> {
 }
 
 #[batch_impl_only(
-    Semigroup<Additive> <T: Semigroup<Additive>> Quaternion<T>,
-)]
-trait Semigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
     Monoid<Additive> <T: Monoid<Additive>> Quaternion<T> #identity{
         Quaternion::new(
             <T as Monoid<Additive>>::identity(),
@@ -48,16 +44,6 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 }
 
 #[batch_impl_only(
-    Quasigroup<Additive> <T: Quasigroup<Additive>> Quaternion<T>,
-)]
-trait Quasigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
-    Loop<Additive> <T: Loop<Additive>> Quaternion<T>,
-)]
-trait Loop<Op: Operator>: Quasigroup<Op> + Monoid<Op> {}
-
-#[batch_impl_only(
     Group<Additive> <T: Group<Additive>> Quaternion<T> #inverse{
         Quaternion::new(
             <T as Group<Additive>>::inverse(self.w()),
@@ -70,11 +56,6 @@ trait Loop<Op: Operator>: Quasigroup<Op> + Monoid<Op> {}
 trait Group<Op: Operator>: Loop<Op> {
     fn inverse(&self) -> Self;
 }
-
-#[batch_impl_only(
-    AbelianGroup<Additive> <T: AbelianGroup<Additive>> Quaternion<T>,
-)]
-trait AbelianGroup<Op: Operator>: Group<Op> {}
 
 // ---- multiplicative side: Hamilton's product (non-commutative) ----
 
@@ -142,11 +123,6 @@ trait Magma<Op: Operator> {
 }
 
 #[batch_impl_only(
-    Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>,
-)]
-trait Semigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
     Monoid<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T> #identity{
         Quaternion::new(
             <T as Monoid<Multiplicative>>::identity(),
@@ -159,19 +135,6 @@ trait Semigroup<Op: Operator>: Magma<Op> {}
 trait Monoid<Op: Operator>: Semigroup<Op> {
     fn identity() -> Self;
 }
-
-// ---- ring ladder: a division ring (never a field — non-commutative) ----
-
-#[batch_impl_only(
-    #crate::tower::Semiring:
-    Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>,
-)]
-trait Semiring<Oa: Operator, Om: Operator>: Monoid<Oa> + Monoid<Om> {}
-
-#[batch_impl_only(
-    Ring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>,
-)]
-trait Ring<Oa: Operator, Om: Operator>: Semiring<Oa, Om> + AbelianGroup<Oa> {}
 
 // `Quaternion<T>` is a division ring, never a commutative ring (hence never
 // a field): the multiplication is the Hamiltonian product.
@@ -209,7 +172,6 @@ trait DivisionRing<Oa: Operator, Om: Operator>: Ring<Oa, Om> {
 // ---- module level: a four-dimensional vector space over `T` ----
 
 #[batch_impl_only(
-    #crate::tower::Module:
     Module<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>
         #Scalar{T}
         #scale{Quaternion::new(
@@ -224,17 +186,24 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
     fn scale(s: &Self::Scalar, v: Self) -> Self;
 }
 
-#[batch_impl_only(
-    #crate::tower::VectorSpace:
-    VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>
-        where{Self::Scalar: Field<Additive, Multiplicative>},
-)]
-trait VectorSpace<Oa: Operator, Om: Operator>: Module<Oa, Om> {}
+// Marker levels: `batch_trait!`.
+
+batch_trait! {
+    Semigroup: Semigroup<Additive> <T: Semigroup<Additive>> Quaternion<T>,
+        Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
+    Quasigroup: Quasigroup<Additive> <T: Quasigroup<Additive>> Quaternion<T>;
+    Loop: Loop<Additive> <T: Loop<Additive>> Quaternion<T>;
+    AbelianGroup: AbelianGroup<Additive> <T: AbelianGroup<Additive>> Quaternion<T>;
+    Semiring: Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
+    Ring: Ring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
+    VectorSpace: VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>
+        where{Self::Scalar: Field<Additive, Multiplicative>};
+    FiniteDimInnerSpace: FiniteDimInnerSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>;
+}
 
 // ---- analytic layer: the euclidean norm of the four components ----
 
 #[batch_impl_only(
-    #crate::tower::NormedSpace:
     NormedSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T> #RealField{T}
         #norm_squared{
             *self.w() * *self.w() + *self.x() * *self.x() + *self.y() * *self.y() + *self.z() * *self.z()
@@ -258,7 +227,6 @@ trait InnerSpace<Oa: Operator, Om: Operator>: NormedSpace<Oa, Om> {
 }
 
 #[batch_impl_only(
-    #crate::tower::FiniteDimVectorSpace:
     FiniteDimVectorSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>
         #dimension{4}
         #canonical_basis_element{
@@ -276,15 +244,6 @@ trait FiniteDimVectorSpace<Oa: Operator, Om: Operator>: VectorSpace<Oa, Om> {
     fn dimension() -> usize;
     fn canonical_basis_element(_i: usize) -> Self;
     fn dot(&self, other: &Self) -> Self::Scalar;
-}
-
-#[batch_impl_only(
-    #crate::tower::FiniteDimInnerSpace:
-    FiniteDimInnerSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>,
-)]
-trait FiniteDimInnerSpace<Oa: Operator, Om: Operator>:
-    FiniteDimVectorSpace<Oa, Om> + InnerSpace<Oa, Om>
-{
 }
 
 #[cfg(test)]

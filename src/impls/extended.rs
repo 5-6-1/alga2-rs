@@ -7,25 +7,16 @@
 //! runs to 16; `BoundedLattice` (via `Lattice` → `PartialOrd`) and `Power`
 //! (via `Clone`) stop at 12.
 
-use batch_impl::batch_impl_only;
+use batch_impl::{batch_impl_only, batch_trait};
 
 use crate::op::{Additive, Multiplicative};
-use crate::tower::{Band, BoundedLattice, Monoid, Power};
+use crate::tower::{Band, BoundedLattice, EuclideanDomain, LieAlgebra, Monoid, Power};
 
 // ---- Band: idempotent semigroups — the boolean `and` (and its tuples) ----
-
-#[batch_impl_only(
-    Band<Multiplicative> [
-        bool,
-        (<Band<Multiplicative>>,)^1..=16
-    ]
-)]
-trait Band<Op: Operator>: Semigroup<Op> {}
 
 // ---- BoundedLattice: integer top/bottom, booleans, and tuples ----
 
 #[batch_impl_only(
-    #crate::tower::BoundedLattice:
     [@u*, @i*] #top{Self::MAX} #bottom{Self::MIN},
     bool #top{true} #bottom{false},
     (<BoundedLattice>,)^1..=12 impl{(A@..,)} #top{( @(@A::top(),).. )} #bottom{( @(@A::bottom(),).. )},
@@ -38,7 +29,6 @@ trait BoundedLattice: Lattice {
 // ---- EuclideanDomain: the integers (euclidean division + gcd) ----
 
 #[batch_impl_only(
-    #crate::tower::EuclideanDomain:
     EuclideanDomain<Additive, Multiplicative> [
         [@u8..u64, usize] #euclidean_norm{*self as u128},
         u128 #euclidean_norm{*self},
@@ -54,22 +44,20 @@ trait EuclideanDomain<Oa: Operator, Om: Operator>: CommutativeRing<Oa, Om> {
 // ---- LieAlgebra: the trivial (abelian) bracket on the numerics ----
 
 #[batch_impl_only(
-    #crate::tower::LieAlgebra:
     LieAlgebra<Additive> [@num,bool] #bracket{<Self as Monoid<Additive>>::identity()},
 )]
 trait LieAlgebra<Op: Operator>: Magma<Op> {
     fn bracket(&self, _other: &Self) -> Self;
 }
 
-// ---- Power: square-and-multiply (the default implementation needs only
-// ---- the monoid structure, so every monoid gets it as a marker) ----
+// Marker structures without directives: one `batch_trait!` segment each.
 
-#[batch_impl_only(
-    [Power<Additive>,Power<Multiplicative>]^[@num,bool],
-    Power<Additive> (<Power<Additive>>,)^1..=12,
-    Power<Multiplicative> (<Power<Multiplicative>>,)^1..=12,
-)]
-trait Power<Op: Operator>: Monoid<Op> + Clone {}
+batch_trait! {
+    Band: Band<Multiplicative> [bool, (<Band<Multiplicative>>,)^1..=16];
+    Power: [Power<Additive>,Power<Multiplicative>]^[@num,bool],
+        Power<Additive> (<Power<Additive>>,)^1..=12,
+        Power<Multiplicative> (<Power<Multiplicative>>,)^1..=12;
+}
 
 #[cfg(test)]
 mod tests {
@@ -94,7 +82,7 @@ mod tests {
     #[test]
     fn band_tuples_to_16() {
         // Band is std-tuple-trait-free: the (bool, ...) 16-tuple inhabits it.
-        fn assert_band<T: crate::tower::Band<Multiplicative>>() {}
+        fn assert_band<T: Band<Multiplicative>>() {}
         assert_band::<(
             bool,
             bool,

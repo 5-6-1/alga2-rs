@@ -3,15 +3,15 @@
 //! Both combine by (right-biased) union: `HashMap` keeps the right-hand
 //! value for colliding keys, which keeps the operation associative.
 
-use batch_impl::batch_impl_only;
+use batch_impl::{batch_impl_only, batch_trait};
 
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
 use crate::op::Additive;
+use crate::tower::{Magma, Monoid, Semigroup};
 
 #[batch_impl_only(
-    #crate::tower::Magma:
     Magma<Additive> <K: Clone + Eq + Hash> [
         <V: Clone> HashMap<K, V> #combine{
             let mut m = self.clone();
@@ -34,16 +34,6 @@ trait Magma<Op: Operator> {
 }
 
 #[batch_impl_only(
-    #crate::tower::Semigroup:
-    Semigroup<Additive> <K: Clone + Eq + Hash> [
-        <V: Clone> HashMap<K, V>,
-        HashSet<K>,
-    ]
-)]
-trait Semigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
-    #crate::tower::Monoid:
     Monoid<Additive> <K: Clone + Eq + Hash> [
         <V: Clone> HashMap<K, V> #identity{HashMap::new()},
         HashSet<K> #identity{HashSet::new()},
@@ -51,6 +41,10 @@ trait Semigroup<Op: Operator>: Magma<Op> {}
 )]
 trait Monoid<Op: Operator>: Semigroup<Op> {
     fn identity() -> Self;
+}
+
+batch_trait! {
+    Semigroup: Semigroup<Additive> <K: Clone + Eq + Hash> [<V: Clone> HashMap<K, V>, HashSet<K>];
 }
 
 #[cfg(test)]
