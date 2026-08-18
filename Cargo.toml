@@ -1,0 +1,34 @@
+[package]
+name = "alga2"
+version = "0.0.1"
+edition = "2024"
+authors = ["5-6-1"]
+description = "A modern abstract-algebra hierarchy for Rust — the successor to alga, powered by batch-impl"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["algebra", "monoid", "group", "ring", "field"]
+categories = ["mathematics", "no-std"]
+rust-version = "1.93.0"
+
+[dependencies]
+batch-impl = "0"
+# Optional: powers the exported law-testing strategies (src/laws) for
+# downstream users. Re-declared as a dev-dependency so `cargo test` can use
+# it without enabling the feature.
+proptest = { version = "1", optional = true }
+
+[dev-dependencies]
+# Property-based testing for the algebraic laws (associativity / identity /
+# inverses / distributivity) — see src/laws.
+proptest = "1"
+
+[features]
+# Mainstream users get the full matrix out of the box; embedded/no_std users
+# write `default-features = false` (the ecosystem-standard posture).
+default = ["std"]
+# HashMap/HashSet-style impl matrices (v0.2).
+std = ["alloc"]
+# Vec/String/Box-style impl matrices.
+alloc = []
+# Exports src/laws (proptest strategies) for testing downstream custom types.
+proptest = ["dep:proptest", "std"]
