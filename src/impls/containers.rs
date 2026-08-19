@@ -21,9 +21,9 @@ use crate::tower::{
     Magma<Additive> [
         <T: Clone> Vec<T> #combine{let mut v = self.clone(); v.extend(rhs.iter().cloned()); v},
         String #combine{let mut s = self.clone(); s.push_str(rhs); s},
-        <T: Magma<Additive>> Box<T> #combine{Box::new((**self).combine(&**rhs))},
+        <T: Magma<> > Box<T> #combine{Box::new((**self).combine(&**rhs))},
     ],
-    Magma<Multiplicative> <T: Magma<Multiplicative>> Box<T> #combine{Box::new((**self).combine(&**rhs))},
+    Magma<Multiplicative> <T: Magma<> > Box<T> #combine{Box::new((**self).combine(&**rhs))},
 )]
 trait Magma<Op: Operator> {
     fn combine(&self, rhs: &Self) -> Self;
@@ -33,9 +33,9 @@ trait Magma<Op: Operator> {
     Semigroup<Additive>[
         <T: Clone> Vec<T>,
         String,
-        <T: Semigroup<Additive>> Box<T>,
+        <T: Semigroup<> > Box<T>,
     ],
-    Semigroup<Multiplicative> <T: Semigroup<Multiplicative>> Box<T>,
+    Semigroup<Multiplicative> <T: Semigroup<> > Box<T>,
 )]
 trait Semigroup<Op: Operator>: Magma<Op> {}
 
@@ -43,9 +43,9 @@ trait Semigroup<Op: Operator>: Magma<Op> {}
     Monoid<Additive> [
         <T: Clone> Vec<T> #identity{Vec::new()},
         String #identity{String::new()},
-        <T: Monoid<Additive>> Box<T> #identity{Box::new(T::identity())},
+        <T: Monoid<> > Box<T> #identity{Box::new(T::identity())},
     ],
-    Monoid<Multiplicative> <T: Monoid<Multiplicative>> Box<T> #identity{Box::new(T::identity())},
+    Monoid<Multiplicative> <T: Monoid<> > Box<T> #identity{Box::new(T::identity())},
 )]
 trait Monoid<Op: Operator>: Semigroup<Op> {
     fn identity() -> Self;
@@ -57,18 +57,18 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 // ---- semiring ladder: Box delegates the ring/field levels ----
 
 batch_trait! {
-    Quasigroup:Quasigroup<Additive> <T: Quasigroup<Additive>> Box<T>;
-    Loop:Loop<Additive> <T: Loop<Additive>> Box<T>;
-    Group:Group<Additive> <T: Group<Additive>> Box<T>
+    Quasigroup:Quasigroup<Additive> <T: Quasigroup<> > Box<T>;
+    Loop:Loop<Additive> <T: Loop<> > Box<T>;
+    Group:Group<Additive> <T: Group<> > Box<T>
         {fn inverse(&self) -> Self {
             Box::new((**self).inverse())
         }};
-    AbelianGroup:AbelianGroup<Additive> <T: AbelianGroup<Additive>> Box<T>;
-    Semiring:Semiring<Additive, Multiplicative> <T: Semiring<Additive, Multiplicative>> Box<T>;
-    Ring:Ring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Box<T>;
-    CommutativeRing:CommutativeRing<Additive, Multiplicative> <T: CommutativeRing<Additive, Multiplicative>> Box<T>;
-    Field:Field<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Box<T>;
-    DivisionRing:DivisionRing<Additive, Multiplicative> <T: DivisionRing<Additive, Multiplicative>> Box<T>
+    AbelianGroup:AbelianGroup<Additive> <T: AbelianGroup<> > Box<T>;
+    Semiring:Semiring<Additive, Multiplicative> <T: Semiring<> > Box<T>;
+    Ring:Ring<Additive, Multiplicative> <T: Ring<> > Box<T>;
+    CommutativeRing:CommutativeRing<Additive, Multiplicative> <T: CommutativeRing<> > Box<T>;
+    Field:Field<Additive, Multiplicative> <T: Field<> > Box<T>;
+    DivisionRing:DivisionRing<Additive, Multiplicative> <T: DivisionRing<> > Box<T>
         {fn inv(&self) -> Self {
             Box::new((**self).inv())
         }},

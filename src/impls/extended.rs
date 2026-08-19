@@ -53,10 +53,10 @@ trait LieAlgebra<Op: Operator>: Magma<Op> {
 // Marker structures without directives: one `batch_trait!` segment each.
 
 batch_trait! {
-    Band: Band<Multiplicative> [bool, (<Band<Multiplicative>>,)^1..=16];
+    Band: Band<Multiplicative> [bool, (<Band<> >,)^1..=16];
     Power: [Power<Additive>,Power<Multiplicative>]^[@num,bool],
-        Power<Additive> (<Power<Additive>>,)^1..=12,
-        Power<Multiplicative> (<Power<Multiplicative>>,)^1..=12;
+        Power<Additive> (<Power<> >,)^1..=12,
+        Power<Multiplicative> (<Power<> >,)^1..=12;
 }
 
 #[cfg(test)]

@@ -28,9 +28,9 @@ use crate::tower::{
 
 #[batch_impl_only(
     [
-        Magma<Additive>where{@0..: @trait<>},
-        Magma<Multiplicative>where{@0..: @trait<>}
-    ]^()^1..=16 impl{(A@..,)} #combine{( @(@A::combine(&self.@0, &rhs.@0),).. )},
+        Magma<Additive>,
+        Magma<Multiplicative>
+    ]^(<@trait<> >,)^1..=16 impl{(A@..,)}#combine{( @(@A::combine(&self.@0, &rhs.@0),).. )},
 )]
 trait Magma<Op: Operator> {
     fn combine(&self, rhs: &Self) -> Self;
@@ -38,9 +38,9 @@ trait Magma<Op: Operator> {
 
 #[batch_impl_only(
     [
-        Monoid<Additive> where{@0..: @trait<>},
-        Monoid<Multiplicative> where{@0..: @trait<>}
-    ]^()^1..=16 impl{(A@..,)} #identity{( @(@A::identity(),).. )},
+        Monoid<Additive>,
+        Monoid<Multiplicative>
+    ]^(<@trait<> >,)^1..=16 impl{(A@..,)} #identity{( @(@A::identity(),).. )},
 )]
 trait Monoid<Op: Operator>: Semigroup<Op> {
     fn identity() -> Self;
@@ -51,7 +51,7 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 // additive-only too (`(R, ·)` is not a quasigroup: zero absorbs).
 
 #[batch_impl_only(
-    Group<Additive> ()^1..=16 where{@0..: @trait<>} impl{(A@..,)} #inverse{( @(@A::inverse(&self.@0),).. )},
+    Group<Additive> (<@trait<> >,)^1..=16 impl{(A@..,)} #inverse{( @(@A::inverse(&self.@0),).. )},
 )]
 trait Group<Op: Operator>: Loop<Op> {
     fn inverse(&self) -> Self;
@@ -77,19 +77,19 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
 // one `batch_trait!` segment per trait.
 
 batch_trait! {
-    Semigroup: [Semigroup<Additive> where{@0..: @trait<>}, Semigroup<Multiplicative> where{@0..: @trait<>}]^()^1..=16;
-    Quasigroup: Quasigroup<Additive> ()^1..=16 where{@0..: @trait<>};
-    Loop: Loop<Additive> ()^1..=16 where{@0..: @trait<>};
-    AbelianGroup: AbelianGroup<Additive> ()^1..=16 where{@0..: @trait<>};
-    Semiring: Semiring<Additive, Multiplicative> ()^1..=16 where{@0..: @trait<>};
-    Ring: Ring<Additive, Multiplicative> ()^1..=16 where{@0..: @trait<>};
-    CommutativeRing: CommutativeRing<Additive, Multiplicative> ()^1..=16 where{@0..: @trait<>};
-    VectorSpace: VectorSpace<Additive, Multiplicative> ()^1..=16 where{
-        @0..: @trait<>,
-        @1..: VectorSpace<Additive, Multiplicative, Scalar = @0::Scalar>,
+    @tr_tup_to=(<@trait<> >,)^1..=;
+    Semigroup: [Semigroup<Additive>, Semigroup<Multiplicative> ]^@tr_tup_to 16;
+    Quasigroup: Quasigroup<Additive> @tr_tup_to 16;
+    Loop: Loop<Additive> @tr_tup_to 16;
+    AbelianGroup: AbelianGroup<Additive> @tr_tup_to 16;
+    Semiring: Semiring<Additive, Multiplicative> @tr_tup_to 16;
+    Ring: Ring<Additive, Multiplicative> @tr_tup_to 16;
+    CommutativeRing: CommutativeRing<Additive, Multiplicative> @tr_tup_to 16;
+    VectorSpace: VectorSpace<Additive, Multiplicative> @tr_tup_to 16 where{
+        @1..: VectorSpace<Additive, Multiplicative,Scalar = @0::Scalar>,
         Self::Scalar: Field<Additive, Multiplicative>,
     };
-    Lattice: ()^1..=12 where{@0..: Lattice};
+    Lattice: @tr_tup_to 12;
     FiniteDimInnerSpace: FiniteDimInnerSpace<Additive, Multiplicative> (f64,)^1..=16;
 }
 
@@ -101,14 +101,14 @@ batch_trait! {
 // run to 16.
 
 #[batch_impl_only(
-    ()^1..=12 where{@0..: MeetSemilattice} impl{(A@..,)} #meet{( @(@A::meet(&self.@0, &other.@0),).. )},
+    (<@trait>,)^1..=12 impl{(A@..,)} #meet{( @(@A::meet(&self.@0, &other.@0),).. )},
 )]
 trait MeetSemilattice: Sized + PartialOrd {
     fn meet(&self, other: &Self) -> Self;
 }
 
 #[batch_impl_only(
-    ()^1..=12 where{@0..: JoinSemilattice} impl{(A@..,)} #join{( @(@A::join(&self.@0, &other.@0),).. )},
+    (<@trait>,)^1..=12 impl{(A@..,)} #join{( @(@A::join(&self.@0, &other.@0),).. )},
 )]
 trait JoinSemilattice: Sized + PartialOrd {
     fn join(&self, other: &Self) -> Self;

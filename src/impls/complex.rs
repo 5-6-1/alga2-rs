@@ -16,10 +16,10 @@ use crate::tower::{
 // ---- additive side: component-wise ----
 
 #[batch_impl_only(
-    Magma<Additive> <T: @trait<>> Complex<T> #combine{
+    Magma<Additive> <T: @trait<> > Complex<T> impl{@trait<>} #combine{
         Complex::new(
-            <T as Magma<Additive>>::combine(self.re(), rhs.re()),
-            <T as Magma<Additive>>::combine(self.im(), rhs.im()),
+            <T as Magma<> >::combine(self.re(), rhs.re()),
+            <T as Magma<> >::combine(self.im(), rhs.im()),
         )
     },
 )]
@@ -28,10 +28,10 @@ trait Magma<Op: Operator> {
 }
 
 #[batch_impl_only(
-    Monoid<Additive> <T: @trait<>> Complex<T> #identity{
+    Monoid<Additive> <T: @trait<> > Complex<T> impl{@trait<>} #identity{
         Complex::new(
-            <T as Monoid<Additive>>::identity(),
-            <T as Monoid<Additive>>::identity(),
+            <T as Monoid<> >::identity(),
+            <T as Monoid<> >::identity(),
         )
     },
 )]
@@ -40,10 +40,10 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 }
 
 #[batch_impl_only(
-    Group<Additive> <T: @trait<>> Complex<T> #inverse{
+    Group<Additive> <T: @trait<>> Complex<T> impl{@trait<>} #inverse{
         Complex::new(
-            <T as Group<Additive>>::inverse(self.re()),
-            <T as Group<Additive>>::inverse(self.im()),
+            <T as Group<> >::inverse(self.re()),
+            <T as Group<> >::inverse(self.im()),
         )
     },
 )]
@@ -54,18 +54,18 @@ trait Group<Op: Operator>: Loop<Op> {
 // ---- multiplicative side: defined over rings (`ac−bd` needs the inverse) ----
 
 #[batch_impl_only(
-    Magma<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T> #combine{
+    Magma<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T> impl{@trait<>} #combine{
         Complex::new(
             <T as Magma<Additive>>::combine(
-                &<T as Magma<Multiplicative>>::combine(self.re(), rhs.re()),
-                &<T as Group<Additive>>::inverse(&<T as Magma<Multiplicative>>::combine(
+                &<T as Magma<> >::combine(self.re(), rhs.re()),
+                &<T as Group<Additive>>::inverse(&<T as Magma<> >::combine(
                     self.im(),
                     rhs.im(),
                 )),
             ),
             <T as Magma<Additive>>::combine(
-                &<T as Magma<Multiplicative>>::combine(self.re(), rhs.im()),
-                &<T as Magma<Multiplicative>>::combine(self.im(), rhs.re()),
+                &<T as Magma<> >::combine(self.re(), rhs.im()),
+                &<T as Magma<> >::combine(self.im(), rhs.re()),
             ),
         )
     },
