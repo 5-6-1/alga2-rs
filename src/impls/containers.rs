@@ -30,15 +30,15 @@ trait Magma<Op: Operator> {
 }
 
 // A smart pointer is a Magma for any operator its inner type is: pure
-// delegation through one deref, so a single operator-generic spec covers
-// every operator (Additive/Multiplicative) and every wrapper at once.
+// delegation through one deref — a single operator-generic spec covers
+// every operator (Additive/Multiplicative). The wrapper list `[Box,Rc,Arc]^T`
+// mints all three targets; the `impl{Box<T>}` shape template binds `Box` to
+// each wrapper, so one `Box::new` body becomes `Rc::new`/`Arc::new` per
+// target.
 
 #[batch_impl_only(
-    <Op: Operator> Magma<Op> [
-        <T: Magma<Op>> Box<T> #combine{Box::new((**self).combine(&**rhs))},
-        <T: Magma<Op>> Rc<T> #combine{Rc::new((**self).combine(&**rhs))},
-        <T: Magma<Op>> Arc<T> #combine{Arc::new((**self).combine(&**rhs))},
-    ],
+    <Op: Operator> Magma<Op> <T: Magma<Op>> [Box,Rc,Arc]^T impl{Box<T>}
+        #combine{Box::new((**self).combine(&**rhs))},
 )]
 trait Magma<Op: Operator> {
     fn combine(&self, rhs: &Self) -> Self;
@@ -63,11 +63,8 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 }
 
 #[batch_impl_only(
-    <Op: Operator> Monoid<Op> [
-        <T: Monoid<Op>> Box<T> #identity{Box::new(T::identity())},
-        <T: Monoid<Op>> Rc<T> #identity{Rc::new(T::identity())},
-        <T: Monoid<Op>> Arc<T> #identity{Arc::new(T::identity())},
-    ],
+    <Op: Operator> Monoid<Op> <T: Monoid<Op>> [Box,Rc,Arc]^T impl{Box<T>}
+        #identity{Box::new(T::identity())},
 )]
 trait Monoid<Op: Operator>: Semigroup<Op> {
     fn identity() -> Self;
