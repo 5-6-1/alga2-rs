@@ -11,7 +11,7 @@ categories = ["mathematics", "no-std"]
 rust-version = "1.93.0"
 
 [dependencies]
-batch-impl = "0.8.3"
+batch-impl = { path = "D:/CS/Rust/batch-impl" }  # temporary local dev (X<> sync); revert to "0.8.3" before release
 # Optional: powers the exported law-testing strategies (src/laws) for
 # downstream users. Re-declared as a dev-dependency so `cargo test` can use
 # it without enabling the feature.

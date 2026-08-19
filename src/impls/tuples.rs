@@ -28,8 +28,8 @@ use crate::tower::{
 
 #[batch_impl_only(
     [
-        Magma<Additive>where{@0..: Magma<Additive>},
-        Magma<Multiplicative>where{@0..: Magma<Multiplicative>}
+        Magma<Additive>where{@0..: @trait<>},
+        Magma<Multiplicative>where{@0..: @trait<>}
     ]^()^1..=16 impl{(A@..,)} #combine{( @(@A::combine(&self.@0, &rhs.@0),).. )},
 )]
 trait Magma<Op: Operator> {
@@ -38,8 +38,8 @@ trait Magma<Op: Operator> {
 
 #[batch_impl_only(
     [
-        Monoid<Additive> where{@0..: Monoid<Additive>},
-        Monoid<Multiplicative> where{@0..: Monoid<Multiplicative>}
+        Monoid<Additive> where{@0..: @trait<>},
+        Monoid<Multiplicative> where{@0..: @trait<>}
     ]^()^1..=16 impl{(A@..,)} #identity{( @(@A::identity(),).. )},
 )]
 trait Monoid<Op: Operator>: Semigroup<Op> {
@@ -51,7 +51,7 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 // additive-only too (`(R, ·)` is not a quasigroup: zero absorbs).
 
 #[batch_impl_only(
-    Group<Additive> ()^1..=16 where{@0..: Group<Additive>} impl{(A@..,)} #inverse{( @(@A::inverse(&self.@0),).. )},
+    Group<Additive> ()^1..=16 where{@0..: @trait<>} impl{(A@..,)} #inverse{( @(@A::inverse(&self.@0),).. )},
 )]
 trait Group<Op: Operator>: Loop<Op> {
     fn inverse(&self) -> Self;
@@ -64,7 +64,7 @@ trait Group<Op: Operator>: Loop<Op> {
 
 #[batch_impl_only(
     Module<Additive, Multiplicative> ()^1..=16 where{
-        @0..: Module<Additive, Multiplicative>,
+        @0..: @trait<>,
         @1..: Module<Additive, Multiplicative, Scalar = @0::Scalar>,
     } impl{(A@..,)} #Scalar{A0::Scalar} #scale{( @(@A::scale(&s, v.@0),).. )},
 )]
@@ -77,15 +77,15 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
 // one `batch_trait!` segment per trait.
 
 batch_trait! {
-    Semigroup: [Semigroup<Additive> where{@0..: Semigroup<Additive>}, Semigroup<Multiplicative> where{@0..: Semigroup<Multiplicative>}]^()^1..=16;
-    Quasigroup: Quasigroup<Additive> ()^1..=16 where{@0..: Quasigroup<Additive>};
-    Loop: Loop<Additive> ()^1..=16 where{@0..: Loop<Additive>};
-    AbelianGroup: AbelianGroup<Additive> ()^1..=16 where{@0..: AbelianGroup<Additive>};
-    Semiring: Semiring<Additive, Multiplicative> ()^1..=16 where{@0..: Semiring<Additive, Multiplicative>};
-    Ring: Ring<Additive, Multiplicative> ()^1..=16 where{@0..: Ring<Additive, Multiplicative>};
-    CommutativeRing: CommutativeRing<Additive, Multiplicative> ()^1..=16 where{@0..: CommutativeRing<Additive, Multiplicative>};
+    Semigroup: [Semigroup<Additive> where{@0..: @trait<>}, Semigroup<Multiplicative> where{@0..: @trait<>}]^()^1..=16;
+    Quasigroup: Quasigroup<Additive> ()^1..=16 where{@0..: @trait<>};
+    Loop: Loop<Additive> ()^1..=16 where{@0..: @trait<>};
+    AbelianGroup: AbelianGroup<Additive> ()^1..=16 where{@0..: @trait<>};
+    Semiring: Semiring<Additive, Multiplicative> ()^1..=16 where{@0..: @trait<>};
+    Ring: Ring<Additive, Multiplicative> ()^1..=16 where{@0..: @trait<>};
+    CommutativeRing: CommutativeRing<Additive, Multiplicative> ()^1..=16 where{@0..: @trait<>};
     VectorSpace: VectorSpace<Additive, Multiplicative> ()^1..=16 where{
-        @0..: VectorSpace<Additive, Multiplicative>,
+        @0..: @trait<>,
         @1..: VectorSpace<Additive, Multiplicative, Scalar = @0::Scalar>,
         Self::Scalar: Field<Additive, Multiplicative>,
     };

@@ -16,7 +16,7 @@ use crate::tower::{
 // ---- additive side: component-wise ----
 
 #[batch_impl_only(
-    Magma<Additive> <T: Magma<Additive>> Quaternion<T> #combine{
+    Magma<Additive> <T: @trait<>> Quaternion<T> #combine{
         Quaternion::new(
             <T as Magma<Additive>>::combine(self.w(), rhs.w()),
             <T as Magma<Additive>>::combine(self.x(), rhs.x()),
@@ -30,7 +30,7 @@ trait Magma<Op: Operator> {
 }
 
 #[batch_impl_only(
-    Monoid<Additive> <T: Monoid<Additive>> Quaternion<T> #identity{
+    Monoid<Additive> <T: @trait<>> Quaternion<T> #identity{
         Quaternion::new(
             <T as Monoid<Additive>>::identity(),
             <T as Monoid<Additive>>::identity(),
@@ -44,7 +44,7 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 }
 
 #[batch_impl_only(
-    Group<Additive> <T: Group<Additive>> Quaternion<T> #inverse{
+    Group<Additive> <T: @trait<>> Quaternion<T> #inverse{
         Quaternion::new(
             <T as Group<Additive>>::inverse(self.w()),
             <T as Group<Additive>>::inverse(self.x()),
@@ -189,13 +189,13 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
 // Marker levels: `batch_trait!`.
 
 batch_trait! {
-    Semigroup: Semigroup<Additive> <T: Semigroup<Additive>> Quaternion<T>,
+    Semigroup: Semigroup<Additive> <T: @trait<>> Quaternion<T>,
         Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
-    Quasigroup: Quasigroup<Additive> <T: Quasigroup<Additive>> Quaternion<T>;
-    Loop: Loop<Additive> <T: Loop<Additive>> Quaternion<T>;
-    AbelianGroup: AbelianGroup<Additive> <T: AbelianGroup<Additive>> Quaternion<T>;
+    Quasigroup: Quasigroup<Additive> <T: @trait<>> Quaternion<T>;
+    Loop: Loop<Additive> <T: @trait<>> Quaternion<T>;
+    AbelianGroup: AbelianGroup<Additive> <T: @trait<>> Quaternion<T>;
     Semiring: Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
-    Ring: Ring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
+    Ring: Ring<Additive, Multiplicative> <T: @trait<>> Quaternion<T>;
     VectorSpace: VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>
         where{Self::Scalar: Field<Additive, Multiplicative>};
     FiniteDimInnerSpace: FiniteDimInnerSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>;

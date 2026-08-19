@@ -16,7 +16,7 @@ use crate::tower::{
 // ---- additive side: component-wise ----
 
 #[batch_impl_only(
-    Magma<Additive> <T: Magma<Additive>> Complex<T> #combine{
+    Magma<Additive> <T: @trait<>> Complex<T> #combine{
         Complex::new(
             <T as Magma<Additive>>::combine(self.re(), rhs.re()),
             <T as Magma<Additive>>::combine(self.im(), rhs.im()),
@@ -28,7 +28,7 @@ trait Magma<Op: Operator> {
 }
 
 #[batch_impl_only(
-    Monoid<Additive> <T: Monoid<Additive>> Complex<T> #identity{
+    Monoid<Additive> <T: @trait<>> Complex<T> #identity{
         Complex::new(
             <T as Monoid<Additive>>::identity(),
             <T as Monoid<Additive>>::identity(),
@@ -40,7 +40,7 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 }
 
 #[batch_impl_only(
-    Group<Additive> <T: Group<Additive>> Complex<T> #inverse{
+    Group<Additive> <T: @trait<>> Complex<T> #inverse{
         Complex::new(
             <T as Group<Additive>>::inverse(self.re()),
             <T as Group<Additive>>::inverse(self.im()),
@@ -130,15 +130,15 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
 // Marker levels (no directives, no duplicated signatures): `batch_trait!`.
 
 batch_trait! {
-    Semigroup: Semigroup<Additive> <T: Semigroup<Additive>> Complex<T>,
+    Semigroup: Semigroup<Additive> <T: @trait<>> Complex<T>,
         Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
-    Quasigroup: Quasigroup<Additive> <T: Quasigroup<Additive>> Complex<T>;
-    Loop: Loop<Additive> <T: Loop<Additive>> Complex<T>;
-    AbelianGroup: AbelianGroup<Additive> <T: AbelianGroup<Additive>> Complex<T>;
+    Quasigroup: Quasigroup<Additive> <T: @trait<>> Complex<T>;
+    Loop: Loop<Additive> <T: @trait<>> Complex<T>;
+    AbelianGroup: AbelianGroup<Additive> <T: @trait<>> Complex<T>;
     Semiring: Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
-    Ring: Ring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
-    CommutativeRing: CommutativeRing<Additive, Multiplicative> <T: CommutativeRing<Additive, Multiplicative>> Complex<T>;
-    Field: Field<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>;
+    Ring: Ring<Additive, Multiplicative> <T: @trait<>> Complex<T>;
+    CommutativeRing: CommutativeRing<Additive, Multiplicative> <T: @trait<>> Complex<T>;
+    Field: Field<Additive, Multiplicative> <T: @trait<>> Complex<T>;
     VectorSpace: VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>
         where{Self::Scalar: Field<Additive, Multiplicative>};
 }
