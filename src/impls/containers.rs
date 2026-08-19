@@ -84,56 +84,18 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 // call returns the inner type). Method levels hand-write the deref forward.
 
 batch_trait! {
-    Semigroup: <Op: Operator> Semigroup<Op> [
-        <T: Semigroup<Op>> Box<T>,
-        <T: Semigroup<Op>> Rc<T>,
-        <T: Semigroup<Op>> Arc<T>,
-    ];
-    Quasigroup: <Op: Operator> Quasigroup<Op> [
-        <T: Quasigroup<Op>> Box<T>,
-        <T: Quasigroup<Op>> Rc<T>,
-        <T: Quasigroup<Op>> Arc<T>,
-    ];
-    Loop: <Op: Operator> Loop<Op> [
-        <T: Loop<Op>> Box<T>,
-        <T: Loop<Op>> Rc<T>,
-        <T: Loop<Op>> Arc<T>,
-    ];
-    Group: <Op: Operator> Group<Op> [
-        <T: Group<Op>> Box<T> {fn inverse(&self) -> Self { Box::new((**self).inverse()) }},
-        <T: Group<Op>> Rc<T> {fn inverse(&self) -> Self { Rc::new((**self).inverse()) }},
-        <T: Group<Op>> Arc<T> {fn inverse(&self) -> Self { Arc::new((**self).inverse()) }},
-    ];
-    AbelianGroup: <Op: Operator> AbelianGroup<Op> [
-        <T: AbelianGroup<Op>> Box<T>,
-        <T: AbelianGroup<Op>> Rc<T>,
-        <T: AbelianGroup<Op>> Arc<T>,
-    ];
-    Semiring: <Oa: Operator, Om: Operator> Semiring<Oa, Om> [
-        <T: Semiring<Oa, Om>> Box<T>,
-        <T: Semiring<Oa, Om>> Rc<T>,
-        <T: Semiring<Oa, Om>> Arc<T>,
-    ];
-    Ring: <Oa: Operator, Om: Operator> Ring<Oa, Om> [
-        <T: Ring<Oa, Om>> Box<T>,
-        <T: Ring<Oa, Om>> Rc<T>,
-        <T: Ring<Oa, Om>> Arc<T>,
-    ];
-    CommutativeRing: <Oa: Operator, Om: Operator> CommutativeRing<Oa, Om> [
-        <T: CommutativeRing<Oa, Om>> Box<T>,
-        <T: CommutativeRing<Oa, Om>> Rc<T>,
-        <T: CommutativeRing<Oa, Om>> Arc<T>,
-    ];
-    Field: <Oa: Operator, Om: Operator> Field<Oa, Om> [
-        <T: Field<Oa, Om>> Box<T>,
-        <T: Field<Oa, Om>> Rc<T>,
-        <T: Field<Oa, Om>> Arc<T>,
-    ];
-    DivisionRing: <Oa: Operator, Om: Operator> DivisionRing<Oa, Om> [
-        <T: DivisionRing<Oa, Om>> Box<T> {fn inv(&self) -> Self { Box::new((**self).inv()) }},
-        <T: DivisionRing<Oa, Om>> Rc<T> {fn inv(&self) -> Self { Rc::new((**self).inv()) }},
-        <T: DivisionRing<Oa, Om>> Arc<T> {fn inv(&self) -> Self { Arc::new((**self).inv()) }},
-    ];
+    @ptr=[Box,Rc,Arc];
+    @impl=<T:@trait<> >@ptr^T;
+    Semigroup: <Op: Operator> Semigroup<Op> @impl;
+    Quasigroup: <Op: Operator> Quasigroup<Op> @impl;
+    Loop: <Op: Operator> Loop<Op> @impl;
+    Group: <Op: Operator> Group<Op> @impl impl{Box<T>} {fn inverse(&self) -> Self { Box::new((**self).inverse()) }};
+    AbelianGroup: <Op: Operator> AbelianGroup<Op> @impl;
+    Semiring: <Oa: Operator, Om: Operator> Semiring<Oa, Om> @impl;
+    Ring: <Oa: Operator, Om: Operator> Ring<Oa, Om> @impl;
+    CommutativeRing: <Oa: Operator, Om: Operator> CommutativeRing<Oa, Om> @impl;
+    Field: <Oa: Operator, Om: Operator> Field<Oa, Om> @impl;
+    DivisionRing: <Oa: Operator, Om: Operator> DivisionRing<Oa, Om> @impl impl{Box<T>} {fn inv(&self) -> Self { Box::new((**self).inv()) }},;
 }
 
 #[cfg(test)]
