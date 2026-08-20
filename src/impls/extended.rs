@@ -54,7 +54,7 @@ trait LieAlgebra<Op: Operator>: Magma<Op> {
 
 batch_trait! {
     Band: Band<Multiplicative> [bool, (<Band<> >,).1..=16];
-    Power: [Power<Additive>,Power<Multiplicative>].[@num,bool],
+    Power: [Power<Additive>,Power<Multiplicative>] [@num,bool],
         Power<Additive> (<Power<> >,).1..=12,
         Power<Multiplicative> (<Power<> >,).1..=12;
 }

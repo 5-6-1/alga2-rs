@@ -30,7 +30,7 @@ use crate::tower::{
     [
         Magma<Additive>,
         Magma<Multiplicative>
-    ].(<@trait<> >,).1..=16 impl{(A@..,)}#combine{( @(@A::combine(&self.@0, &rhs.@0),).. )},
+    ] (<@trait<> >,).1..=16 impl{(A@..,)}#combine{( @(@A::combine(&self.@0, &rhs.@0),).. )},
 )]
 trait Magma<Op: Operator> {
     fn combine(&self, rhs: &Self) -> Self;
@@ -40,7 +40,7 @@ trait Magma<Op: Operator> {
     [
         Monoid<Additive>,
         Monoid<Multiplicative>
-    ].(<@trait<> >,).1..=16 impl{(A@..,)} #identity{( @(@A::identity(),).. )},
+    ] (<@trait<> >,).1..=16 impl{(A@..,)} #identity{( @(@A::identity(),).. )},
 )]
 trait Monoid<Op: Operator>: Semigroup<Op> {
     fn identity() -> Self;
@@ -78,7 +78,7 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
 
 batch_trait! {
     @tr_tup_to=(<@trait<> >,).1..=;
-    Semigroup: [Semigroup<Additive>, Semigroup<Multiplicative> ].@tr_tup_to 16;
+    Semigroup: [Semigroup<Additive>, Semigroup<Multiplicative> ] @tr_tup_to 16;
     Quasigroup: Quasigroup<Additive> @tr_tup_to 16;
     Loop: Loop<Additive> @tr_tup_to 16;
     AbelianGroup: AbelianGroup<Additive> @tr_tup_to 16;

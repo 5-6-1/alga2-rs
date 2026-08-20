@@ -104,7 +104,7 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
 // trait signatures): one `batch_trait!` segment per trait.
 
 batch_trait! {
-    Semigroup: [Semigroup<Additive>,Semigroup<Multiplicative>].[@num,bool];
+    Semigroup: [Semigroup<Additive>,Semigroup<Multiplicative>] [@num,bool];
     Quasigroup: Quasigroup<Additive> [@num, bool];
     Loop: Loop<Additive> [@num, bool];
     AbelianGroup: AbelianGroup<Additive> [@num, bool];
