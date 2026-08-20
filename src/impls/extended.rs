@@ -15,8 +15,8 @@ use crate::tower::{Band, BoundedLattice, EuclideanDomain, LieAlgebra, Monoid, Po
 batch_trait! {
     Band: Band<Multiplicative> [bool, (<Band<> >,).1..=16];
     Power: [Power<Additive>,Power<Multiplicative>] [@num,bool],
-        Power<Additive> (<Power<> >,).1..=12,
-        Power<Multiplicative> (<Power<> >,).1..=12;
+        @trait<Additive> (<Power<> >,).1..=12,
+        @trait<Multiplicative> (<Power<> >,).1..=12;
     BoundedLattice: BoundedLattice [@u*,@i*]
         {fn top() -> Self { Self::MAX } fn bottom() -> Self { Self::MIN }},
         BoundedLattice bool
@@ -28,16 +28,16 @@ batch_trait! {
     // Euclidean division: `quot_rem` is the same div_euclid/rem_euclid pair
     // for every family; only the norm representation differs (the `@u*` cast
     // vs the `@i*` unsigned-abs — a type reality, not a duplication).
-    EuclideanDomain: EuclideanDomain<Additive, Multiplicative> [@u8..u64, usize]
+    EuclideanDomain: @trait<Additive, Multiplicative> [@u8..u64, usize]
         {fn quot_rem(&self, divisor: &Self) -> (Self, Self) { (self.div_euclid(*divisor), self.rem_euclid(*divisor)) }
          fn euclidean_norm(&self) -> u128 { *self as u128 }},
-        EuclideanDomain<Additive, Multiplicative> u128
+        @trait<Additive, Multiplicative> u128
         {fn quot_rem(&self, divisor: &Self) -> (Self, Self) { (self.div_euclid(*divisor), self.rem_euclid(*divisor)) }
          fn euclidean_norm(&self) -> u128 { *self }},
-        EuclideanDomain<Additive, Multiplicative> [@i8..i64, isize]
+        @trait<Additive, Multiplicative> [@i8..i64, isize]
         {fn quot_rem(&self, divisor: &Self) -> (Self, Self) { (self.div_euclid(*divisor), self.rem_euclid(*divisor)) }
          fn euclidean_norm(&self) -> u128 { self.unsigned_abs() as u128 }},
-        EuclideanDomain<Additive, Multiplicative> i128
+        @trait<Additive, Multiplicative> i128
         {fn quot_rem(&self, divisor: &Self) -> (Self, Self) { (self.div_euclid(*divisor), self.rem_euclid(*divisor)) }
          fn euclidean_norm(&self) -> u128 { self.unsigned_abs() }};
 }

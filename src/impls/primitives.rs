@@ -29,23 +29,23 @@ use crate::tower::{
 
 batch_trait! {
     @int=[@u*,@i*];
-    Magma: Magma<Additive> @int {fn combine(&self, rhs: &Self) -> Self { self.wrapping_add(*rhs) }},
-        Magma<Additive> @f* {fn combine(&self, rhs: &Self) -> Self { *self + *rhs }},
-        Magma<Additive> bool {fn combine(&self, rhs: &Self) -> Self { *self != *rhs }},
-        Magma<Multiplicative> @int {fn combine(&self, rhs: &Self) -> Self { self.wrapping_mul(*rhs) }},
-        Magma<Multiplicative> @f* {fn combine(&self, rhs: &Self) -> Self { *self * *rhs }},
-        Magma<Multiplicative> bool {fn combine(&self, rhs: &Self) -> Self { *self && *rhs }};
-    Monoid: Monoid<Additive> @int {fn identity() -> Self { 0 }},
-        Monoid<Additive> @f* {fn identity() -> Self { 0. }},
-        Monoid<Additive> bool {fn identity() -> Self { false }},
-        Monoid<Multiplicative> @int {fn identity() -> Self { 1 }},
-        Monoid<Multiplicative> @f* {fn identity() -> Self { 1. }},
-        Monoid<Multiplicative> bool {fn identity() -> Self { true }};
-    Group: Group<Additive> @int {fn inverse(&self) -> Self { self.wrapping_neg() }},
-        Group<Additive> @f* {fn inverse(&self) -> Self { -*self }},
-        Group<Additive> bool {fn inverse(&self) -> Self { *self }};
-    DivisionRing: DivisionRing<Additive, Multiplicative> @f* {fn inv(&self) -> Self { 1.0 / *self }},
-        DivisionRing<Additive, Multiplicative> bool {fn inv(&self) -> Self { *self }};
+    Magma: @trait<Additive> @int {fn combine(&self, rhs: &Self) -> Self { self.wrapping_add(*rhs) }},
+        @trait<Additive> @f* {fn combine(&self, rhs: &Self) -> Self { *self + *rhs }},
+        @trait<Additive> bool {fn combine(&self, rhs: &Self) -> Self { *self != *rhs }},
+        @trait<Multiplicative> @int {fn combine(&self, rhs: &Self) -> Self { self.wrapping_mul(*rhs) }},
+        @trait<Multiplicative> @f* {fn combine(&self, rhs: &Self) -> Self { *self * *rhs }},
+        @trait<Multiplicative> bool {fn combine(&self, rhs: &Self) -> Self { *self && *rhs }};
+    Monoid: @trait<Additive> @int {fn identity() -> Self { 0 }},
+        @trait<Additive> @f* {fn identity() -> Self { 0. }},
+        @trait<Additive> bool {fn identity() -> Self { false }},
+        @trait<Multiplicative> @int {fn identity() -> Self { 1 }},
+        @trait<Multiplicative> @f* {fn identity() -> Self { 1. }},
+        @trait<Multiplicative> bool {fn identity() -> Self { true }};
+    Group: @trait<Additive> @int {fn inverse(&self) -> Self { self.wrapping_neg() }},
+        @trait<Additive> @f* {fn inverse(&self) -> Self { -*self }},
+        @trait<Additive> bool {fn inverse(&self) -> Self { *self }};
+    DivisionRing: @trait<Additive, Multiplicative> @f* {fn inv(&self) -> Self { 1.0 / *self }},
+        @trait<Additive, Multiplicative> bool {fn inv(&self) -> Self { *self }};
     Semigroup: [Semigroup<Additive>,Semigroup<Multiplicative>] [@num,bool];
     Quasigroup: Quasigroup<Additive> [@num, bool];
     Loop: Loop<Additive> [@num, bool];
@@ -59,11 +59,11 @@ batch_trait! {
     VectorSpace: VectorSpace<Additive, Multiplicative> [@f*,bool] where{Self::Scalar: Field<Additive, Multiplicative>};
     FreeModule: FreeModule<Additive, Multiplicative> [@num, bool]
         {fn rank() -> usize { 1 } fn basis_element(_i: usize) -> Self { <Self as Monoid<Multiplicative>>::identity() } fn coordinate(&self, _i: usize) -> Self::Scalar { *self }};
-    Module: Module<Additive, Multiplicative> @int
+    Module: @trait<Additive, Multiplicative> @int
         {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { s.wrapping_mul(v) }},
-        Module<Additive, Multiplicative> @f*
+        @trait<Additive, Multiplicative> @f*
         {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { s * v }},
-        Module<Additive, Multiplicative> bool
+        @trait<Additive, Multiplicative> bool
         {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { *s && v }};
 }
 

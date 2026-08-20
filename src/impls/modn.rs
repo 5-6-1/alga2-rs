@@ -17,33 +17,33 @@ use crate::tower::{
 // ---- one batch_trait! block: the residue ring Z/PZ ----
 
 batch_trait! {
-    Magma: Magma<Additive> <const P: usize> ModN<P>
+    Magma: @trait<Additive> <const P: usize> ModN<P>
         {fn combine(&self, rhs: &Self) -> Self { ModN::new(self.value().wrapping_add(rhs.value())) }},
-        Magma<Multiplicative> <const P: usize> ModN<P>
+        @trait<Multiplicative> <const P: usize> ModN<P>
         {fn combine(&self, rhs: &Self) -> Self { ModN::new(self.value().wrapping_mul(rhs.value())) }};
-    Semigroup: Semigroup<Additive> <const P: usize> ModN<P>,
-        Semigroup<Multiplicative> <const P: usize> ModN<P>;
-    Monoid: Monoid<Additive> <const P: usize> ModN<P> {fn identity() -> Self { ModN::new(0) }},
-        Monoid<Multiplicative> <const P: usize> ModN<P> {fn identity() -> Self { ModN::new(1) }};
-    Quasigroup: Quasigroup<Additive> <const P: usize> ModN<P>;
-    Loop: Loop<Additive> <const P: usize> ModN<P>;
-    Group: Group<Additive> <const P: usize> ModN<P>
+    Semigroup: @trait<Additive> <const P: usize> ModN<P>,
+        @trait<Multiplicative> <const P: usize> ModN<P>;
+    Monoid: @trait<Additive> <const P: usize> ModN<P> {fn identity() -> Self { ModN::new(0) }},
+        @trait<Multiplicative> <const P: usize> ModN<P> {fn identity() -> Self { ModN::new(1) }};
+    Quasigroup: @trait<Additive> <const P: usize> ModN<P>;
+    Loop: @trait<Additive> <const P: usize> ModN<P>;
+    Group: @trait<Additive> <const P: usize> ModN<P>
         {fn inverse(&self) -> Self { ModN::new(P.wrapping_sub(self.value()).wrapping_rem(P)) }};
-    AbelianGroup: AbelianGroup<Additive> <const P: usize> ModN<P>;
-    Semiring: Semiring<Additive, Multiplicative> <const P: usize> ModN<P>;
-    Ring: Ring<Additive, Multiplicative> <const P: usize> ModN<P>;
-    CommutativeRing: CommutativeRing<Additive, Multiplicative> <const P: usize> ModN<P>;
-    Field: Field<Additive, Multiplicative> <const P: usize> ModN<P>;
-    FiniteField: FiniteField<Additive, Multiplicative> <const P: usize> ModN<P>
+    AbelianGroup: @trait<Additive> <const P: usize> ModN<P>;
+    Semiring: @trait<Additive, Multiplicative> <const P: usize> ModN<P>;
+    Ring: @trait<Additive, Multiplicative> <const P: usize> ModN<P>;
+    CommutativeRing: @trait<Additive, Multiplicative> <const P: usize> ModN<P>;
+    Field: @trait<Additive, Multiplicative> <const P: usize> ModN<P>;
+    FiniteField: @trait<Additive, Multiplicative> <const P: usize> ModN<P>
         {fn characteristic() -> u64 { P as u64 } fn order() -> u64 { P as u64 }};
-    IntegralDomain: IntegralDomain<Additive, Multiplicative> <const P: usize> ModN<P>;
-    UniqueFactorizationDomain: UniqueFactorizationDomain<Additive, Multiplicative> <const P: usize> ModN<P>;
-    PrincipalIdealDomain: PrincipalIdealDomain<Additive, Multiplicative> <const P: usize> ModN<P>;
-    Module: Module<Additive, Multiplicative> <const P: usize> ModN<P>
+    IntegralDomain: @trait<Additive, Multiplicative> <const P: usize> ModN<P>;
+    UniqueFactorizationDomain: @trait<Additive, Multiplicative> <const P: usize> ModN<P>;
+    PrincipalIdealDomain: @trait<Additive, Multiplicative> <const P: usize> ModN<P>;
+    Module: @trait<Additive, Multiplicative> <const P: usize> ModN<P>
         {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { ModN::new(s.value().wrapping_mul(v.value())) }};
-    VectorSpace: VectorSpace<Additive, Multiplicative> <const P: usize> ModN<P>
+    VectorSpace: @trait<Additive, Multiplicative> <const P: usize> ModN<P>
         where{Self::Scalar: Field<Additive, Multiplicative>};
-    FreeModule: FreeModule<Additive, Multiplicative> <const P: usize> ModN<P>
+    FreeModule: @trait<Additive, Multiplicative> <const P: usize> ModN<P>
         {fn rank() -> usize { 1 } fn basis_element(_i: usize) -> Self { <Self as Monoid<Multiplicative>>::identity() } fn coordinate(&self, _i: usize) -> Self::Scalar { *self }};
 }
 
