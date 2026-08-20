@@ -67,7 +67,7 @@ batch_trait! {
         }
     };
     AbelianGroup: @with;
-    Semiring: @trait<@am> <T: Ring> Quaternion<T>;
+    Semiring: <T: Ring> Quaternion<T>;
     Ring: <T: @trait> Quaternion<T>;
     Module: @trait<@am> <T: Field> Quaternion<T>{
         type Scalar = T;

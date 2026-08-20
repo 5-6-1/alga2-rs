@@ -18,7 +18,7 @@ use crate::tower::{
 // ---- simple levels: component-wise, one batch_trait! block ----
 
 batch_trait! {
-    @with_add=@trait<Additive> <T: @trait<>> Complex<T>;
+    @with_add=<T: @trait> Complex<T>;
     @with_mul=@trait<Multiplicative> <T: Ring> Complex<T>;
     @am=Additive,Multiplicative;
     Magma: @with_add{
@@ -107,7 +107,7 @@ batch_trait! {
             Complex::new(*self.re(), <T as Group>::inverse(self.im()))
         }
     };
-    FieldExtension: @trait<@am> <T: Real + Copy> Complex<T>{
+    FieldExtension: <T: Real + Copy> Complex<T>{
         type BaseField = T;
         fn degree() -> usize { 2 }
         fn trace(&self) -> Self::BaseField {

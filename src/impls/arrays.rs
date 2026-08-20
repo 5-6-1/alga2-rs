@@ -39,7 +39,7 @@ impl<C: Ring + PartialEq + Clone, const N: usize> Polynomial for [C; N] {
 
 batch_trait! {
     @with=@trait[<Additive>,<Multiplicative>] <T: @trait<>, const N: usize> [T; N];
-    @with_add=@trait<Additive> <T: @trait<>, const N: usize> [T; N];
+    @with_add=<T: @trait, const N: usize> [T; N];
     @with2=@trait<Additive,Multiplicative> <T: @trait<>, const N: usize> [T; N];
     @with_impl=@with impl{@trait<>};
     @with2_impl=@with2 impl{@trait<>};

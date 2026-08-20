@@ -77,9 +77,9 @@ batch_trait! {
     Quasigroup: @pri;
     Loop: @pri;
     AbelianGroup: @pri;
-    Semiring: @tr_am @pri;
-    Ring: @tr_am @pri;
-    CommutativeRing: @tr_am @pri;
+    Semiring: @pri;
+    Ring: @pri;
+    CommutativeRing: @pri;
     Field: [@f*, bool];
     FiniteField: bool{
         fn characteristic() -> u64 { 2 }
