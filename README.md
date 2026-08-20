@@ -9,9 +9,9 @@ written once, the matrix supplying the quantity.
 
 | Feature set | Impls | Types covered |
 |---|---|---|
-| bare core (`no_std`) | ~880 | 15 types (`@num` + `bool`/F₂) × full ladders + module/analytic layers, tuples 1–16 (algebraic/module/analytic tiers; the lattice and `Clone`/`PartialEq`-dependent tiers cap at 12 — std's tuple-trait ceiling), `Option`, `Complex<T>`, `Quaternion<T>` |
-| `alloc` | +18 | `Vec<T>`, `String`, `Box<T>` |
-| `std` (default) | +6 | `HashMap`, `HashSet` |
+| bare core (`no_std`) | ~920 | 15 types (`@num` + `bool`/F₂) × full ladders + module/analytic layers, `[T; N]` arrays (any `N` — no std ceiling), tuples 1–16 (algebraic/module/analytic tiers; the lattice and `Clone`/`PartialEq`-dependent tiers cap at 12 — std's tuple-trait ceiling), `Option`, `Complex<T>`, `Quaternion<T>`, `ModN<P>` (Z/pZ, prime-modulus finite field) |
+| `alloc` | +20 | `Vec<T>`, `String`, `Box<T>`, `Rc<T>`, `Arc<T>` (smart-pointer delegation) |
+| `std` (default) | +8 | `HashMap`, `HashSet`, `BTreeMap`, `BTreeSet` |
 
 ## Quick start
 

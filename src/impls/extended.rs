@@ -59,6 +59,11 @@ batch_trait! {
         Power<Multiplicative> (<Power<> >,).1..=12;
 }
 
+// `StarSemiring` (Kleene star) deliberately has no in-crate inhabitant: its
+// canonical carrier is the *boolean semiring* `({0,1}, or, and)` (regular
+// languages, graph path problems) — not the two-element field F₂ (xor
+// addition), where `1 + 1 = 0` breaks the closure law `1 + a·a* == a*`.
+
 #[cfg(test)]
 mod tests {
     use super::*;

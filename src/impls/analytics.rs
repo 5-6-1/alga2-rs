@@ -13,10 +13,10 @@ use batch_impl::{batch_impl_only, batch_trait};
 use crate::complex::Complex;
 use crate::op::{Additive, Multiplicative};
 use crate::tower::{
-    BooleanAlgebra, ClosedAdd, ClosedDiv, ClosedMul, ClosedNeg, ClosedSub, ComplementedLattice,
-    DistributiveLattice, FiniteDimInnerSpace, FiniteDimVectorSpace, Group, InnerSpace,
-    JoinSemilattice, Lattice, Magma, MeetSemilattice, Module, Monoid, NormedSpace, OrderedField,
-    PositiveDefinite, Real, SubsetOf, SymmetricBilinearForm, VectorSpace,
+    BooleanAlgebra, ClosedAdd, ClosedDiv, ClosedMul, ClosedNeg, ClosedRem, ClosedSub,
+    ComplementedLattice, DistributiveLattice, FiniteDimInnerSpace, FiniteDimVectorSpace, Group,
+    InnerSpace, JoinSemilattice, Lattice, Magma, MeetSemilattice, Module, Monoid, NormedSpace,
+    OrderedField, PositiveDefinite, Real, SubsetOf, SymmetricBilinearForm, VectorSpace,
 };
 
 // ---- lattices: min/max on every numeric (and `bool`, ordered) ----
@@ -135,6 +135,7 @@ batch_trait! {
     ClosedSub:@num;
     ClosedMul:@num;
     ClosedDiv:@num;
+    ClosedRem:@num;
     FiniteDimInnerSpace:FiniteDimInnerSpace<Additive, Multiplicative> [@f*,Complex<f64>,Complex<f32>];
     ClosedNeg:[@i*, @f*];
     DistributiveLattice: @num, bool;

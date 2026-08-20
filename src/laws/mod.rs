@@ -42,7 +42,7 @@ use crate::tower::{
     AbelianGroup, Band, BilinearForm, CommutativeRing, ComplementedLattice, DistributiveLattice,
     DivisionRing, EuclideanDomain, Field, FieldExtension, FreeModule, Group, IntegralDomain,
     Lattice, LieAlgebra, LinearMap, Magma, Module, Monoid, OrderedField, PositiveDefinite,
-    Quasigroup, Ring, Semiring, SymmetricBilinearForm, TensorProduct, VectorSpace,
+    Quasigroup, Ring, Semiring, StarSemiring, SymmetricBilinearForm, TensorProduct, VectorSpace,
 };
 
 /// Associativity: `(a·b)·c == a·(b·c)`.
@@ -354,6 +354,20 @@ where
     let lhs = f.apply(&su);
     let rhs = <M::Codomain as Module<Oa, Om>>::scale(&s, f.apply(&u));
     prop_assert_eq!(lhs, rhs);
+    Ok(())
+}
+
+/// Kleene-star laws: `1 + a·a* == a*` and `1 + a*·a == a*`.
+pub fn star_semiring_laws<Oa: Operator, Om: Operator, T>(a: T) -> Result<(), TestCaseError>
+where
+    T: StarSemiring<Oa, Om> + PartialEq + Debug,
+{
+    let one = <T as Monoid<Om>>::identity();
+    let a_star = a.star();
+    let a_a_star = <T as Magma<Om>>::combine(&a, &a_star);
+    prop_assert_eq!(<T as Magma<Oa>>::combine(&one, &a_a_star), a.star());
+    let a_star_a = <T as Magma<Om>>::combine(&a_star, &a);
+    prop_assert_eq!(<T as Magma<Oa>>::combine(&one, &a_star_a), a.star());
     Ok(())
 }
 

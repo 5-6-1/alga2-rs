@@ -3,7 +3,9 @@
 //! These are the "the operation never leaves the type" certificates that
 //! downstream generic code (e.g. vector/geometry algorithms) can bound on.
 
-use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use core::ops::{
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
+};
 
 /// Closed under `+`/`+=`.
 pub trait ClosedAdd<Right = Self>: Sized + Add<Right, Output = Self> + AddAssign<Right> {}
@@ -16,6 +18,9 @@ pub trait ClosedMul<Right = Self>: Sized + Mul<Right, Output = Self> + MulAssign
 
 /// Closed under `/`/`/=`.
 pub trait ClosedDiv<Right = Self>: Sized + Div<Right, Output = Self> + DivAssign<Right> {}
+
+/// Closed under `%`/`%=`.
+pub trait ClosedRem<Right = Self>: Sized + Rem<Right, Output = Self> + RemAssign<Right> {}
 
 /// Closed under unary `-`.
 pub trait ClosedNeg: Sized + Neg<Output = Self> {}

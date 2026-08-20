@@ -42,7 +42,7 @@ pub mod transform;
 
 pub use self::band::Band;
 pub use self::bilinear::{BilinearForm, PositiveDefinite, SymmetricBilinearForm};
-pub use self::closed::{ClosedAdd, ClosedDiv, ClosedMul, ClosedNeg, ClosedSub};
+pub use self::closed::{ClosedAdd, ClosedDiv, ClosedMul, ClosedNeg, ClosedRem, ClosedSub};
 pub use self::euclid::{AffineSpace, EuclideanSpace};
 pub use self::euclidean::EuclideanDomain;
 pub use self::id::Id;
