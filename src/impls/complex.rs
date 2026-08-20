@@ -18,7 +18,7 @@ use crate::tower::{
 // ---- simple levels: component-wise, one batch_trait! block ----
 
 batch_trait! {
-    Magma: Magma<Additive> <T: @trait<>> Complex<T>{
+    Magma: @trait<Additive> <T: @trait<>> Complex<T>{
         fn combine(&self, rhs: &Self) -> Self {
             Complex::new(
                 <T as Magma<>>::combine(self.re(), rhs.re()),
@@ -26,7 +26,7 @@ batch_trait! {
             )
         }
     },
-        Magma<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>{
+        @trait<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>{
         fn combine(&self, rhs: &Self) -> Self {
             Complex::new(
                 <T as Magma<Additive>>::combine(
@@ -43,21 +43,21 @@ batch_trait! {
             )
         }
     };
-    Semigroup: Semigroup<Additive> <T: @trait<>> Complex<T>,
-        Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
-    Monoid: Monoid<Additive> <T: @trait<>> Complex<T>{
+    Semigroup: @trait<Additive> <T: @trait<>> Complex<T>,
+        @trait<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
+    Monoid: @trait<Additive> <T: @trait<>> Complex<T>{
         fn identity() -> Self {
             Complex::new(<T as Monoid<>>::identity(), <T as Monoid<>>::identity())
         }
     },
-        Monoid<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>{
+        @trait<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>{
         fn identity() -> Self {
             Complex::new(<T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity())
         }
     };
-    Quasigroup: Quasigroup<Additive> <T: @trait<>> Complex<T>;
-    Loop: Loop<Additive> <T: @trait<>> Complex<T>;
-    Group: Group<Additive> <T: @trait<>> Complex<T>{
+    Quasigroup: @trait<Additive> <T: @trait<>> Complex<T>;
+    Loop: @trait<Additive> <T: @trait<>> Complex<T>;
+    Group: @trait<Additive> <T: @trait<>> Complex<T>{
         fn inverse(&self) -> Self {
             Complex::new(
                 <T as Group<>>::inverse(self.re()),
@@ -65,12 +65,12 @@ batch_trait! {
             )
         }
     };
-    AbelianGroup: AbelianGroup<Additive> <T: @trait<>> Complex<T>;
-    Semiring: Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
-    Ring: Ring<Additive, Multiplicative> <T: @trait<>> Complex<T>;
-    CommutativeRing: CommutativeRing<Additive, Multiplicative> <T: @trait<>> Complex<T>;
-    Field: Field<Additive, Multiplicative> <T: @trait<>> Complex<T>;
-    Module: Module<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>{
+    AbelianGroup: @trait<Additive> <T: @trait<>> Complex<T>;
+    Semiring: @trait<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
+    Ring: @trait<Additive, Multiplicative> <T: @trait<>> Complex<T>;
+    CommutativeRing: @trait<Additive, Multiplicative> <T: @trait<>> Complex<T>;
+    Field: @trait<Additive, Multiplicative> <T: @trait<>> Complex<T>;
+    Module: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>{
         type Scalar = T;
         fn scale(s: &Self::Scalar, v: Self) -> Self {
             Complex::new(
@@ -79,7 +79,7 @@ batch_trait! {
             )
         }
     };
-    VectorSpace: VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>
+    VectorSpace: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>
         where{Self::Scalar: Field<Additive, Multiplicative>};
 }
 
