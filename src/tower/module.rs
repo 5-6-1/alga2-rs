@@ -17,9 +17,10 @@ use super::{AbelianGroup, Field, Ring};
 /// A module over a ring: an additive abelian group with a compatible scalar
 /// multiplication.
 ///
-/// The laws (tested in [`crate::laws`]) are bilinearity — `s·(u+v) =
-/// s·u + s·v`, `(s+t)·v = s·v + t·v`, `(s·t)·v = s·(t·v)`, `1·v = v` —
-/// where `+`/`·` are the operator-parameterized operations.
+/// The laws (tested in the `crate::laws` module, feature `proptest`) are
+/// bilinearity — `s·(u+v) = s·u + s·v`, `(s+t)·v = s·v + t·v`,
+/// `(s·t)·v = s·(t·v)`, `1·v = v` — where `+`/`·` are the
+/// operator-parameterized operations.
 pub trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
     /// The scalar ring acting on `Self`.
     type Scalar: Ring<Oa, Om>;

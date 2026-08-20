@@ -10,7 +10,7 @@ use crate::op::{Additive, Multiplicative};
 use crate::tower::{Field, Module, VectorSpace};
 
 /// A bilinear form over a vector space: `B(u, v)` linear in both arguments
-/// (the bilinearity laws are in [`crate::laws`]).
+/// (the bilinearity laws are in the `crate::laws` module, feature `proptest`).
 pub trait BilinearForm
 where
     <Self::Space as Module<Additive, Multiplicative>>::Scalar: Field<Additive, Multiplicative>,

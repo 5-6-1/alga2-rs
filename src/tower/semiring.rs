@@ -2,7 +2,7 @@
 //!
 //! These traits combine both operators: the additive part is the abelian
 //! ladder from the parent module, the multiplicative part is the monoid
-//! under [`Multiplicative`](crate::op::Multiplicative), and the two are tied
+//! under [`Multiplicative`], and the two are tied
 //! together by distributivity — a law, tested in `crate::laws`. `Field`
 //! additionally requires `0 != 1` (a law).
 

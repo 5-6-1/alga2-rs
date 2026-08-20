@@ -69,7 +69,8 @@ builds.
 ## Law testing (`laws`)
 
 Every level ships proptest properties and law bundles, so downstream users
-check a custom type against the laws of the level it claims to implement:
+check a custom type against the laws of the level it claims to implement
+(`alga2::laws`, feature `proptest`):
 
 ```rust,ignore
 // Requires the `proptest` feature; run inside your own test module.
@@ -87,7 +88,7 @@ proptest! {
 
 - [`tower`](crate::tower) — the trait hierarchy (single source of truth)
 - [`op`](crate::op) — the operator markers
-- [`laws`](crate::laws) — proptest law testing (feature `proptest`)
+- `laws` — proptest law testing (feature `proptest`)
 - [`complex`](crate::complex) — in-crate `Complex<T>`, `Quaternion<T>` (zero-dependency)
 - `impls` (private) — the batch-impl matrices
 

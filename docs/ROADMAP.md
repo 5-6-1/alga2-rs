@@ -20,23 +20,28 @@
 |---------------------------|--------------------------------------------------------------|------------------------------------------------|------|
 | **M1 设计冻结（1–2 周）** | 层级 trait 签名、运算符系统、命名、alga API 差异表           | 关闭本文档 §5 的待决问题                       | ✅ 完成（差异表见 `docs/ALGA-DIFF.md`） |
 | **M2 v0.1（3–5 周）**     | 核心塔 + 数值矩阵 + 定律骨架 + README 横幅                   | 已发布；定律测试通过；记录与 alga 的编译期对比 | ✅ 代码完成（未发布） |
-| **M3 v0.2（6–8 周）**     | 元组/Option/Vec/Complex 矩阵 + no_std 打磨 + num-traits 桥接 | 已发布；5k 下载量                              | ✅ 代码完成（num-traits 桥接搁置：零依赖优先） |
-| **M4 v0.3（9–12 周）**    | Module/VectorSpace + nalgebra/sprs 推广 + 博客/TWiR          | ≥1 次迁移对话落地                              | 🚧 Module/VectorSpace ✅；推广/迁移未开始 |
-| **M5 持续进行**           | 维护 + batch-impl 自用反馈 + 文档                            | 季度指标表滚动更新                             | ✅ 进行中（已向 batch-impl 反馈并落地两个特性：where 值位置 `@N`、开放范围 `@1..`） |
+| **M3 v0.2（6–8 周）**     | 元组/Option/Vec/Complex 矩阵 + no_std 打磨 + num-traits 桥接 | 已发布；5k 下载量                              | ✅ 代码完成（num-traits 桥接搁置：零依赖优先）；矩阵扩展至 Quaternion/ModN/数组/BTree 系列 |
+| **M4 v0.3（9–12 周）**    | Module/VectorSpace + nalgebra/sprs 推广 + 博客/TWiR          | ≥1 次迁移对话落地                              | 🚧 Module/VectorSpace/FreeModule/analytics 层 ✅；推广/迁移未开始 |
+| **M5 持续进行**           | 维护 + batch-impl 自用反馈 + 文档                            | 季度指标表滚动更新                             | ✅ 进行中（已向 batch-impl 反馈并落地多个特性：where 值位置 `@N`、开放范围 `@1..`、trait 名继承、约束内 `@trait` 引用、X<> 同步、列表省略） |
 
-> 当前实现（2026-08）：**280 impls** 全部由 batch-impl 生成——15 种基础
-> 类型（`@num` + `bool`/F₂）的全阶梯 + module 层级、元组 1–4（含模块/
-> 向量空间，变长段 + repeat 块生成）、`Option`、`Complex<T>`、Vec/String/
-> Box（alloc）、HashMap/HashSet（std）。35 个定律测试全绿；`no_std` 裸核心
-> 256 impls。batch-impl 依赖暂为本地 path（两个未发布特性），发布后切回
-> crates.io。
+> 当前实现（2026-08）：**~900 impls** 全部由 batch-impl 生成——15 种基础
+> 类型（`@num` + `bool`/F₂）的全阶梯 + module/analytic 层、`[T; N]` 数组
+> （任意 `N`，无 std 上限）、元组 1–16（代数/module/analytic 层；依赖
+> `Clone`/`PartialEq` 的层按 std 元组上限止于 12）、`Option`、
+> `Complex<T>`、`Quaternion<T>`、`ModN<P>`（Z/pZ 素模有限域）、
+> Vec/String/Box/Rc/Arc（alloc）、HashMap/HashSet/BTreeMap/BTreeSet
+> （std）。全套定律 proptest 全绿；`no_std` 裸核心零依赖。batch-impl
+> 依赖暂为本地 path（未发布特性），发布后切回 crates.io。
 
 ## 4. 已记录的设计决策
 
 - **层级范围（v0.1）**：加法阶梯 `Magma → Semigroup → Monoid →
   Group → AbelianGroup`；乘法阶梯 `Semiring → Ring →
   CommutativeRing → Field`。**设计上排除**：Quasigroup、Loop、Band、
-  Lattice（alga 过度设计；仅列入待办）。
+  Lattice（alga 过度设计；仅列入待办）。→ 后续已实现：Quasigroup/
+  Loop（加法侧，`(R, ·)` 非拟群故乘法侧止于 Monoid）、Band（幂等
+  半群）、Lattice 全族（含 Bounded/Distributive/Complemented/
+  BooleanAlgebra）。
 - **运算符系统**：一个类型在 `+` 和 `*` 下都是 `Monoid`，因此
   trait 通过运算符标记进行参数化（`Monoid<Additive<T>>`），
   并提供符合人体工学的别名（`AdditiveMonoid<T>`）。刻意避免 alga 的

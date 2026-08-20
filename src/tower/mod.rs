@@ -74,7 +74,7 @@ use crate::op::{Additive, Operator};
 /// A magma: a set closed under a binary operation.
 ///
 /// The operation itself lives in the impl: `combine` is `+` under
-/// [`Additive`](crate::op::Additive) and `*` under
+/// [`Additive`] and `*` under
 /// [`Multiplicative`](crate::op::Multiplicative).
 pub trait Magma<Op: Operator = Additive> {
     /// The binary operation.

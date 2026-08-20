@@ -1,7 +1,7 @@
 //! Normed spaces, inner-product spaces, and finite-dimensional vector
-//! spaces — the analytic layer over [`VectorSpace`](super::module::VectorSpace).
+//! spaces — the analytic layer over [`VectorSpace`].
 //!
-//! The norm lives in a real field ([`Real`](super::real::Real)); inner
+//! The norm lives in a real field ([`Real`]); inner
 //! products are **real** (euclidean), so a complex vector space's norm is
 //! still real. Gram–Schmidt orthogonalization is implemented once here and
 //! inherited by every finite-dimensional inner-product space.

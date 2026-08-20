@@ -12,7 +12,7 @@ use crate::tower::Magma;
 /// `V × W → V ⊗ W`.
 ///
 /// The bilinearity laws (`tensor_bilinear_left`/`tensor_bilinear_right`) are
-/// in [`crate::laws`].
+/// in the `crate::laws` module (feature `proptest`).
 pub trait TensorProduct<Op: Operator>: Sized {
     /// The left factor.
     type Left: Magma<Op>;
