@@ -11,6 +11,8 @@
 //! - `"Field"` — + DivisionRing → Field (field-typed fields only)
 //!
 //! ```
+//! use alga2::op::Additive;
+//! use alga2::tower::Magma;
 //! use alga2_derive::Alga;
 //!
 //! #[derive(Alga)]
@@ -19,7 +21,7 @@
 //!
 //! let a = Vec2 { x: 1.0, y: 2.0 };
 //! let b = Vec2 { x: 3.0, y: 4.0 };
-//! assert_eq!(a.combine(&b).x, 4.0);
+//! assert_eq!(<Vec2 as Magma<Additive>>::combine(&a, &b).x, 4.0);
 //! ```
 
 use proc_macro::TokenStream;

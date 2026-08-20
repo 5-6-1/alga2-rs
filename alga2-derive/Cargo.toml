@@ -21,3 +21,7 @@ proc-macro = true
 proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = ["full"] }
+
+[dev-dependencies]
+# The derive's doctests expand against the real tower.
+alga2 = { path = ".." }
