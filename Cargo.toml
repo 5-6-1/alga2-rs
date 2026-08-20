@@ -21,6 +21,8 @@ proptest = { version = "1", optional = true }
 # Property-based testing for the algebraic laws (associativity / identity /
 # inverses / distributivity) — see src/laws.
 proptest = "1"
+# The derive macro: one line brings a struct into the whole tower (tests).
+alga2-derive = { path = "alga2-derive" }
 
 [features]
 # Mainstream users get the full matrix out of the box; embedded/no_std users
