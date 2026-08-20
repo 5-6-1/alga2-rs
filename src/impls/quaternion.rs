@@ -81,6 +81,74 @@ batch_trait! {
     VectorSpace: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>
         where{Self::Scalar: Field<Additive, Multiplicative>};
     FiniteDimInnerSpace: @trait<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>;
+    // Division ring inverse, the normed layer: structurally similar to the
+    // complex versions, well under the 60-line reuse boundary.
+    DivisionRing: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative> + Copy> Quaternion<T>{
+        fn inv(&self) -> Self {
+            let conj = Quaternion::new(
+                *self.w(),
+                <T as Group<Additive>>::inverse(self.x()),
+                <T as Group<Additive>>::inverse(self.y()),
+                <T as Group<Additive>>::inverse(self.z()),
+            );
+            let norm2 = <T as Magma<Additive>>::combine(
+                &<T as Magma<Additive>>::combine(
+                    &<T as Magma<Multiplicative>>::combine(self.w(), self.w()),
+                    &<T as Magma<Multiplicative>>::combine(self.x(), self.x()),
+                ),
+                &<T as Magma<Additive>>::combine(
+                    &<T as Magma<Multiplicative>>::combine(self.y(), self.y()),
+                    &<T as Magma<Multiplicative>>::combine(self.z(), self.z()),
+                ),
+            );
+            let inv_norm2 = <T as DivisionRing<Additive, Multiplicative>>::inv(&norm2);
+            // q⁻¹ = conj(q) / ‖q‖²
+            <Quaternion<T> as Magma<Multiplicative>>::combine(
+                &conj,
+                &Quaternion::new(
+                    inv_norm2,
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Additive>>::identity(),
+                ),
+            )
+        }
+    };
+    NormedSpace: @trait<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
+        type RealField = T;
+        fn norm_squared(&self) -> Self::RealField {
+            *self.w() * *self.w()
+                + *self.x() * *self.x()
+                + *self.y() * *self.y()
+                + *self.z() * *self.z()
+        }
+        fn scale_real(&self, r: Self::RealField) -> Self {
+            Quaternion::new(*self.w() * r, *self.x() * r, *self.y() * r, *self.z() * r)
+        }
+    };
+    InnerSpace: @trait<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
+        fn inner_product(&self, other: &Self) -> Self::RealField {
+            *self.w() * *other.w()
+                + *self.x() * *other.x()
+                + *self.y() * *other.y()
+                + *self.z() * *other.z()
+        }
+    };
+    FiniteDimVectorSpace: @trait<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
+        fn dimension() -> usize { 4 }
+        fn canonical_basis_element(_i: usize) -> Self {
+            match _i {
+                0 => Quaternion::new(<T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity()),
+                1 => Quaternion::new(<T as Monoid<Additive>>::identity(), <T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity()),
+                2 => Quaternion::new(<T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity()),
+                3 => Quaternion::new(<T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Multiplicative>>::identity()),
+                _ => unreachable!(),
+            }
+        }
+        fn dot(&self, other: &Self) -> Self::Scalar {
+            self.inner_product(other)
+        }
+    };
 }
 
 // ---- multiplicative side: Hamilton's product (non-commutative) ----
@@ -146,113 +214,8 @@ impl<T: Ring<Additive, Multiplicative>> Magma<Multiplicative> for Quaternion<T> 
 }
 
 // `Quaternion<T>` is a division ring, never a commutative ring (hence never
-// a field): the multiplication is the Hamiltonian product.
-
-impl<T: Field<Additive, Multiplicative> + Copy> DivisionRing<Additive, Multiplicative>
-    for Quaternion<T>
-{
-    fn inv(&self) -> Self {
-        let conj = Quaternion::new(
-            *self.w(),
-            <T as Group<Additive>>::inverse(self.x()),
-            <T as Group<Additive>>::inverse(self.y()),
-            <T as Group<Additive>>::inverse(self.z()),
-        );
-        let norm2 = <T as Magma<Additive>>::combine(
-            &<T as Magma<Additive>>::combine(
-                &<T as Magma<Multiplicative>>::combine(self.w(), self.w()),
-                &<T as Magma<Multiplicative>>::combine(self.x(), self.x()),
-            ),
-            &<T as Magma<Additive>>::combine(
-                &<T as Magma<Multiplicative>>::combine(self.y(), self.y()),
-                &<T as Magma<Multiplicative>>::combine(self.z(), self.z()),
-            ),
-        );
-        let inv_norm2 = <T as DivisionRing<Additive, Multiplicative>>::inv(&norm2);
-        // q⁻¹ = conj(q) / ‖q‖²
-        <Quaternion<T> as Magma<Multiplicative>>::combine(
-            &conj,
-            &Quaternion::new(
-                inv_norm2,
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-            ),
-        )
-    }
-}
-
-// ---- analytic layer: the euclidean norm of the four components ----
-
-impl<T: Real + ClosedAdd + ClosedMul + Copy> NormedSpace<Additive, Multiplicative>
-    for Quaternion<T>
-{
-    type RealField = T;
-
-    fn norm_squared(&self) -> Self::RealField {
-        *self.w() * *self.w()
-            + *self.x() * *self.x()
-            + *self.y() * *self.y()
-            + *self.z() * *self.z()
-    }
-
-    fn scale_real(&self, r: Self::RealField) -> Self {
-        Quaternion::new(*self.w() * r, *self.x() * r, *self.y() * r, *self.z() * r)
-    }
-}
-
-impl<T: Real + ClosedAdd + ClosedMul + Copy> InnerSpace<Additive, Multiplicative>
-    for Quaternion<T>
-{
-    fn inner_product(&self, other: &Self) -> Self::RealField {
-        *self.w() * *other.w()
-            + *self.x() * *other.x()
-            + *self.y() * *other.y()
-            + *self.z() * *other.z()
-    }
-}
-
-impl<T: Real + ClosedAdd + ClosedMul + Copy> FiniteDimVectorSpace<Additive, Multiplicative>
-    for Quaternion<T>
-{
-    fn dimension() -> usize {
-        4
-    }
-
-    fn canonical_basis_element(_i: usize) -> Self {
-        match _i {
-            0 => Quaternion::new(
-                <T as Monoid<Multiplicative>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-            ),
-            1 => Quaternion::new(
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Multiplicative>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-            ),
-            2 => Quaternion::new(
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Multiplicative>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-            ),
-            3 => Quaternion::new(
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Multiplicative>>::identity(),
-            ),
-            _ => unreachable!(),
-        }
-    }
-
-    fn dot(&self, other: &Self) -> Self::Scalar {
-        self.inner_product(other)
-    }
-}
+// a field): the multiplication is the Hamiltonian product. Its 55-line body
+// is the one genuinely bulky algorithm — hand-written.
 
 #[cfg(test)]
 mod tests {

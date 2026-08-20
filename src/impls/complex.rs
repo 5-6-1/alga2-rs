@@ -81,68 +81,48 @@ batch_trait! {
     };
     VectorSpace: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>
         where{Self::Scalar: Field<Additive, Multiplicative>};
-}
-
-// ---- division-ring inverse: conj(z) / |z|² ----
-
-impl<T: Field<Additive, Multiplicative>> DivisionRing<Additive, Multiplicative> for Complex<T> {
-    fn inv(&self) -> Self {
-        let d = <T as Magma<Additive>>::combine(
-            &<T as Magma<Multiplicative>>::combine(self.re(), self.re()),
-            &<T as Magma<Multiplicative>>::combine(self.im(), self.im()),
-        );
-        let inv_d = <T as DivisionRing<Additive, Multiplicative>>::inv(&d);
-        Complex::new(
-            <T as Magma<Multiplicative>>::combine(self.re(), &inv_d),
-            <T as Magma<Multiplicative>>::combine(
-                &<T as Group<Additive>>::inverse(self.im()),
-                &inv_d,
-            ),
-        )
-    }
-}
-
-// ---- complex-field structure: `Complex<T>` over the real field `T` ----
-
-impl<T: Real + Copy> ComplexField for Complex<T> {
-    type RealField = T;
-
-    fn from_real(re: Self::RealField) -> Self {
-        Complex::new(re, <T as Monoid<Additive>>::identity())
-    }
-
-    fn re(&self) -> Self::RealField {
-        *self.re()
-    }
-
-    fn im(&self) -> Self::RealField {
-        *self.im()
-    }
-
-    fn conjugate(&self) -> Self {
-        Complex::new(*self.re(), <T as Group<Additive>>::inverse(self.im()))
-    }
-}
-
-// ---- field extension: `Complex<T>` is a degree-2 extension of `T` ----
-
-impl<T: Real + Copy> FieldExtension<Additive, Multiplicative> for Complex<T> {
-    type BaseField = T;
-
-    fn degree() -> usize {
-        2
-    }
-
-    fn trace(&self) -> Self::BaseField {
-        <T as Magma<Additive>>::combine(self.re(), self.re())
-    }
-
-    fn norm(&self) -> Self::BaseField {
-        <T as Magma<Additive>>::combine(
-            &<T as Magma<Multiplicative>>::combine(self.re(), self.re()),
-            &<T as Magma<Multiplicative>>::combine(self.im(), self.im()),
-        )
-    }
+    // All bodies are under the 40-line hand-written boundary (the division
+    // ring inverse, the complex-field accessors, the degree-2 extension).
+    DivisionRing: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>{
+        fn inv(&self) -> Self {
+            let d = <T as Magma<Additive>>::combine(
+                &<T as Magma<Multiplicative>>::combine(self.re(), self.re()),
+                &<T as Magma<Multiplicative>>::combine(self.im(), self.im()),
+            );
+            let inv_d = <T as DivisionRing<Additive, Multiplicative>>::inv(&d);
+            Complex::new(
+                <T as Magma<Multiplicative>>::combine(self.re(), &inv_d),
+                <T as Magma<Multiplicative>>::combine(
+                    &<T as Group<Additive>>::inverse(self.im()),
+                    &inv_d,
+                ),
+            )
+        }
+    };
+    ComplexField: <T: Real + Copy> Complex<T>{
+        type RealField = T;
+        fn from_real(re: Self::RealField) -> Self {
+            Complex::new(re, <T as Monoid<Additive>>::identity())
+        }
+        fn re(&self) -> Self::RealField { *self.re() }
+        fn im(&self) -> Self::RealField { *self.im() }
+        fn conjugate(&self) -> Self {
+            Complex::new(*self.re(), <T as Group<Additive>>::inverse(self.im()))
+        }
+    };
+    FieldExtension: @trait<Additive, Multiplicative> <T: Real + Copy> Complex<T>{
+        type BaseField = T;
+        fn degree() -> usize { 2 }
+        fn trace(&self) -> Self::BaseField {
+            <T as Magma<Additive>>::combine(self.re(), self.re())
+        }
+        fn norm(&self) -> Self::BaseField {
+            <T as Magma<Additive>>::combine(
+                &<T as Magma<Multiplicative>>::combine(self.re(), self.re()),
+                &<T as Magma<Multiplicative>>::combine(self.im(), self.im()),
+            )
+        }
+    };
 }
 
 #[cfg(test)]
