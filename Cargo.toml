@@ -1,17 +1,23 @@
 [package]
 name = "alga2"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 authors = ["5-6-1"]
 description = "A modern abstract-algebra hierarchy for Rust — the successor to alga, powered by batch-impl"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/5-6-1/alga2"
+homepage = "https://github.com/5-6-1/alga2"
+documentation = "https://docs.rs/alga2"
 readme = "README.md"
 keywords = ["algebra", "monoid", "group", "ring", "field"]
 categories = ["mathematics", "no-std"]
 rust-version = "1.93.0"
+exclude = ["rustfmt.toml", ".github/", ".idea/", "proptest-regressions/", "Cargo.lock"]
 
 [dependencies]
-batch-impl = { path = "D:/CS/Rust/batch-impl" }  # temporary local dev (X<> sync); revert to "0.8.3" before release
+# Local dev path; switch to the crates.io release once batch-impl 0.9.0
+# (with the X<> sync + trait-name inheritance features) is published.
+batch-impl = { path = "D:/CS/Rust/batch-impl" }  # → "0.9" before release
 # Optional: powers the exported law-testing strategies (src/laws) for
 # downstream users. Re-declared as a dev-dependency so `cargo test` can use
 # it without enabling the feature.
@@ -28,7 +34,7 @@ alga2-derive = { path = "alga2-derive" }
 # Mainstream users get the full matrix out of the box; embedded/no_std users
 # write `default-features = false` (the ecosystem-standard posture).
 default = ["std"]
-# HashMap/HashSet-style impl matrices (v0.2).
+# HashMap/HashSet-style impl matrices.
 std = ["alloc"]
 # Vec/String/Box-style impl matrices.
 alloc = []

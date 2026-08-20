@@ -2,9 +2,17 @@
 name = "alga2-derive"
 version = "0.1.0"
 edition = "2024"
+authors = ["5-6-1"]
 description = "Derive macro for alga2: one line brings a struct into the whole algebraic tower"
 license = "MIT OR Apache-2.0"
-rust-version = "1.93"
+repository = "https://github.com/5-6-1/alga2"
+homepage = "https://github.com/5-6-1/alga2"
+documentation = "https://docs.rs/alga2-derive"
+readme = "../README.md"
+keywords = ["algebra", "derive", "macro", "codegen"]
+categories = ["mathematics", "no-std", "development-tools::procedural-macro-helpers"]
+rust-version = "1.93.0"
+exclude = ["target/"]
 
 [lib]
 proc-macro = true
