@@ -3,9 +3,9 @@
 //! not commute, a four-dimensional vector space over `T`, and a normed
 //! algebra (the euclidean norm of the four components).
 //!
-//! The method bodies are hand-written (the Hamiltonian product and the
-//! four-component algebra read better as plain `impl`s); the marker levels
-//! ride `batch_trait!`.
+//! The simple component-wise levels ride `batch_trait!`; the bulky algebra
+//! (Hamiltonian product, division-ring inverse, the normed layer) is
+//! hand-written.
 
 use batch_impl::batch_trait;
 
@@ -17,39 +17,70 @@ use crate::tower::{
     Real, Ring, Semigroup, Semiring, VectorSpace,
 };
 
-// ---- additive side: component-wise ----
+// ---- simple levels: component-wise, one batch_trait! block ----
 
-impl<T: Magma<Additive>> Magma<Additive> for Quaternion<T> {
-    fn combine(&self, rhs: &Self) -> Self {
-        Quaternion::new(
-            <T as Magma<Additive>>::combine(self.w(), rhs.w()),
-            <T as Magma<Additive>>::combine(self.x(), rhs.x()),
-            <T as Magma<Additive>>::combine(self.y(), rhs.y()),
-            <T as Magma<Additive>>::combine(self.z(), rhs.z()),
-        )
-    }
-}
-
-impl<T: Monoid<Additive>> Monoid<Additive> for Quaternion<T> {
-    fn identity() -> Self {
-        Quaternion::new(
-            <T as Monoid<Additive>>::identity(),
-            <T as Monoid<Additive>>::identity(),
-            <T as Monoid<Additive>>::identity(),
-            <T as Monoid<Additive>>::identity(),
-        )
-    }
-}
-
-impl<T: Group<Additive>> Group<Additive> for Quaternion<T> {
-    fn inverse(&self) -> Self {
-        Quaternion::new(
-            <T as Group<Additive>>::inverse(self.w()),
-            <T as Group<Additive>>::inverse(self.x()),
-            <T as Group<Additive>>::inverse(self.y()),
-            <T as Group<Additive>>::inverse(self.z()),
-        )
-    }
+batch_trait! {
+    Magma: Magma<Additive> <T: @trait<>> Quaternion<T>{
+        fn combine(&self, rhs: &Self) -> Self {
+            Quaternion::new(
+                <T as Magma<>>::combine(self.w(), rhs.w()),
+                <T as Magma<>>::combine(self.x(), rhs.x()),
+                <T as Magma<>>::combine(self.y(), rhs.y()),
+                <T as Magma<>>::combine(self.z(), rhs.z()),
+            )
+        }
+    };
+    Semigroup: Semigroup<Additive> <T: @trait<>> Quaternion<T>,
+        Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
+    Monoid: Monoid<Additive> <T: @trait<>> Quaternion<T>{
+        fn identity() -> Self {
+            Quaternion::new(
+                <T as Monoid<>>::identity(),
+                <T as Monoid<>>::identity(),
+                <T as Monoid<>>::identity(),
+                <T as Monoid<>>::identity(),
+            )
+        }
+    },
+        Monoid<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>{
+        fn identity() -> Self {
+            Quaternion::new(
+                <T as Monoid<Multiplicative>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+            )
+        }
+    };
+    Quasigroup: Quasigroup<Additive> <T: @trait<>> Quaternion<T>;
+    Loop: Loop<Additive> <T: @trait<>> Quaternion<T>;
+    Group: Group<Additive> <T: @trait<>> Quaternion<T>{
+        fn inverse(&self) -> Self {
+            Quaternion::new(
+                <T as Group<>>::inverse(self.w()),
+                <T as Group<>>::inverse(self.x()),
+                <T as Group<>>::inverse(self.y()),
+                <T as Group<>>::inverse(self.z()),
+            )
+        }
+    };
+    AbelianGroup: AbelianGroup<Additive> <T: @trait<>> Quaternion<T>;
+    Semiring: Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
+    Ring: Ring<Additive, Multiplicative> <T: @trait<>> Quaternion<T>;
+    Module: Module<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>{
+        type Scalar = T;
+        fn scale(s: &Self::Scalar, v: Self) -> Self {
+            Quaternion::new(
+                <T as Magma<Multiplicative>>::combine(s, v.w()),
+                <T as Magma<Multiplicative>>::combine(s, v.x()),
+                <T as Magma<Multiplicative>>::combine(s, v.y()),
+                <T as Magma<Multiplicative>>::combine(s, v.z()),
+            )
+        }
+    };
+    VectorSpace: VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>
+        where{Self::Scalar: Field<Additive, Multiplicative>};
+    FiniteDimInnerSpace: FiniteDimInnerSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>;
 }
 
 // ---- multiplicative side: Hamilton's product (non-commutative) ----
@@ -114,17 +145,6 @@ impl<T: Ring<Additive, Multiplicative>> Magma<Multiplicative> for Quaternion<T> 
     }
 }
 
-impl<T: Ring<Additive, Multiplicative>> Monoid<Multiplicative> for Quaternion<T> {
-    fn identity() -> Self {
-        Quaternion::new(
-            <T as Monoid<Multiplicative>>::identity(),
-            <T as Monoid<Additive>>::identity(),
-            <T as Monoid<Additive>>::identity(),
-            <T as Monoid<Additive>>::identity(),
-        )
-    }
-}
-
 // `Quaternion<T>` is a division ring, never a commutative ring (hence never
 // a field): the multiplication is the Hamiltonian product.
 
@@ -158,21 +178,6 @@ impl<T: Field<Additive, Multiplicative> + Copy> DivisionRing<Additive, Multiplic
                 <T as Monoid<Additive>>::identity(),
                 <T as Monoid<Additive>>::identity(),
             ),
-        )
-    }
-}
-
-// ---- module level: a four-dimensional vector space over `T` ----
-
-impl<T: Field<Additive, Multiplicative>> Module<Additive, Multiplicative> for Quaternion<T> {
-    type Scalar = T;
-
-    fn scale(s: &Self::Scalar, v: Self) -> Self {
-        Quaternion::new(
-            <T as Magma<Multiplicative>>::combine(s, v.w()),
-            <T as Magma<Multiplicative>>::combine(s, v.x()),
-            <T as Magma<Multiplicative>>::combine(s, v.y()),
-            <T as Magma<Multiplicative>>::combine(s, v.z()),
         )
     }
 }
@@ -247,21 +252,6 @@ impl<T: Real + ClosedAdd + ClosedMul + Copy> FiniteDimVectorSpace<Additive, Mult
     fn dot(&self, other: &Self) -> Self::Scalar {
         self.inner_product(other)
     }
-}
-
-// ---- marker levels ----
-
-batch_trait! {
-    Semigroup: Semigroup<Additive> <T: @trait<>> Quaternion<T>,
-        Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
-    Quasigroup: Quasigroup<Additive> <T: @trait<>> Quaternion<T>;
-    Loop: Loop<Additive> <T: @trait<>> Quaternion<T>;
-    AbelianGroup: AbelianGroup<Additive> <T: @trait<>> Quaternion<T>;
-    Semiring: Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
-    Ring: Ring<Additive, Multiplicative> <T: @trait<>> Quaternion<T>;
-    VectorSpace: VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>
-        where{Self::Scalar: Field<Additive, Multiplicative>};
-    FiniteDimInnerSpace: FiniteDimInnerSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>;
 }
 
 #[cfg(test)]

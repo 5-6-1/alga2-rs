@@ -62,46 +62,64 @@ trait SubsetOf<T>: Sized {
 // ---- the reals: floats only ----
 
 batch_trait! {
-    MeetSemilattice:[@num,bool]
-        {fn meet(&self, other: &Self) -> Self {
+    @with=Additive, Multiplicative;
+    @trait_with=@trait<@with>;
+    MeetSemilattice:[@num,bool]{
+        fn meet(&self, other: &Self) -> Self {
             (*self).min(*other)
-        }};
-    JoinSemilattice: [@num,bool]
-        {fn join(&self, other: &Self) -> Self {
+        }
+    };
+    JoinSemilattice: [@num,bool]{
+        fn join(&self, other: &Self) -> Self {
             (*self).max(*other)
-        }};
+        }
+    };
     Lattice: @num, bool;
     ClosedAdd:@num;
     ClosedSub:@num;
     ClosedMul:@num;
     ClosedDiv:@num;
     ClosedRem:@num;
-    FiniteDimInnerSpace:FiniteDimInnerSpace<Additive, Multiplicative> [@f*,Complex<f64>,Complex<f32>];
+    FiniteDimInnerSpace:@trait_with [@f*,Complex<f64>,Complex<f32>];
     ClosedNeg:[@i*, @f*];
     DistributiveLattice: @num, bool;
-    ComplementedLattice: bool {fn complement(&self) -> Self { !*self }};
+    ComplementedLattice: bool {
+        fn complement(&self) -> Self { !*self }
+    };
     BooleanAlgebra: bool;
-    OrderedField: OrderedField<Additive, Multiplicative> @f*;
-    Real: @f* {fn sqrt(self) -> Self { self.sqrt() } fn abs(self) -> Self { self.abs() } fn acos(self) -> Self { self.acos() }};
-    NormedSpace: NormedSpace<Additive, Multiplicative> @f*
-        {type RealField = Self; fn norm_squared(&self) -> Self { *self * *self } fn scale_real(&self, r: Self) -> Self { *self * r }},
-        NormedSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T>
-        {type RealField = T;
-         fn norm_squared(&self) -> T { *self.re() * *self.re() + *self.im() * *self.im() }
-         fn scale_real(&self, r: T) -> Self {
+    OrderedField: @trait_with @f*;
+    Real: @f* {
+        fn sqrt(self) -> Self { self.sqrt() }
+        fn abs(self) -> Self { self.abs() }
+        fn acos(self) -> Self { self.acos() }
+    };
+    NormedSpace: @trait_with @f*{
+        type RealField = Self;
+        fn norm_squared(&self) -> Self { *self * *self }
+        fn scale_real(&self, r: Self) -> Self { *self * r }
+    },  @trait_with <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T>{
+        type RealField = T;
+        fn norm_squared(&self) -> T { *self.re() * *self.re() + *self.im() * *self.im() }
+        fn scale_real(&self, r: T) -> Self {
             <Complex<T> as Module<Additive, Multiplicative>>::scale(&r, *self)
-        }};
-    InnerSpace: InnerSpace<Additive, Multiplicative> @f*
-        {fn inner_product(&self, other: &Self) -> Self { *self * *other }},
-        InnerSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T>
-        {fn inner_product(&self, other: &Self) -> T {
+        }
+    };
+    InnerSpace: @trait_with [@f*{
+        fn inner_product(&self, other: &Self) -> Self { *self * *other }
+    },
+        <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T>{
+        fn inner_product(&self, other: &Self) -> T {
             *self.re() * *other.re() + *self.im() * *other.im()
-        }};
-    FiniteDimVectorSpace: FiniteDimVectorSpace<Additive, Multiplicative> @f*
-        {fn dimension() -> usize { 1 } fn canonical_basis_element(_i: usize) -> Self { 1. } fn dot(&self, other: &Self) -> Self { *self * *other }},
-        FiniteDimVectorSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T>
-        {fn dimension() -> usize { 2 }
-         fn canonical_basis_element(_i: usize) -> Self {
+        }
+    }];
+    FiniteDimVectorSpace: @trait_with [@f*{
+        fn dimension() -> usize { 1 }
+        fn canonical_basis_element(_i: usize) -> Self { 1. }
+        fn dot(&self, other: &Self) -> Self { *self * *other }
+    },
+         <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T>{
+        fn dimension() -> usize { 2 }
+        fn canonical_basis_element(_i: usize) -> Self {
             if _i == 0 {
                 Complex::new(
                     <T as Monoid<Multiplicative>>::identity(),
@@ -114,34 +132,50 @@ batch_trait! {
                 )
             }
         }
-         fn dot(&self, other: &Self) -> T {
+        fn dot(&self, other: &Self) -> T {
             *self.re() * *other.re() + *self.im() * *other.im()
-        }};
-    BilinearForm: <T: Real + Copy> T where{
-        T: VectorSpace<Additive, Multiplicative, Scalar = T>,
-    } {type Space = T; type Scalar = T; fn apply(&self, u: &T, v: &T) -> T { *u * *v }};
-    SymmetricBilinearForm: <T: Real + Copy> T where{
-        T: VectorSpace<Additive, Multiplicative, Scalar = T>,
+        }
+    }];
+    BilinearForm: <T: Real + Copy> T where
+        T: VectorSpace<@with, Scalar = T>,
+    {
+        type Space = T;
+        type Scalar = T;
+        fn apply(&self, u: &T, v: &T) -> T { *u * *v }
     };
-    PositiveDefinite: <T: Real + Copy> T where{
-        T: VectorSpace<Additive, Multiplicative, Scalar = T>,
-        T: OrderedField<Additive, Multiplicative>,
-    };
+    SymmetricBilinearForm: <T: Real + Copy> T where
+        T: VectorSpace<@with, Scalar = T>,
+    ;
+    PositiveDefinite: <T: Real + Copy> T where
+        T: VectorSpace<@with, Scalar = T>,
+        T: OrderedField<@with>,
+    ;
     // euclidean / affine spaces: the numerics as their own spaces.
     // Tuple caps at 12: `EuclideanSpace` requires `Clone + PartialEq`, which
     // std only implements for tuples up to 12.
-    EuclideanSpace: @f* {type Coordinates = Self; fn origin() -> Self { 0. } fn from_coordinates(coords: Self) -> Self { coords } fn coordinates(&self) -> Self { *self }},
-        EuclideanSpace (f64,).1..=12 impl{(A@..,)}
-        {type Coordinates = (@(f64,)..); fn origin() -> Self { (@(0.,)..) } fn from_coordinates(coords: Self::Coordinates) -> Self { coords } fn coordinates(&self) -> Self::Coordinates { *self }};
-    AffineSpace: @f*
-        {type Translation = Self; fn origin() -> Self { 0. }
-         fn from_point_translation(origin: &Self, translation: &Self) -> Self {
+    EuclideanSpace: @f* {
+        type Coordinates = Self;
+        fn origin() -> Self { 0. }
+        fn from_coordinates(coords: Self) -> Self { coords }
+        fn coordinates(&self) -> Self { *self }
+    },  (f64,).1..=12 impl{(A@..,)}{
+        type Coordinates = (@(f64,)..);
+        fn origin() -> Self { (@(0.,)..) }
+        fn from_coordinates(coords: Self::Coordinates) -> Self { coords }
+        fn coordinates(&self) -> Self::Coordinates { *self }
+    };
+    AffineSpace: @f*{
+        type Translation = Self; fn origin() -> Self { 0. }
+        fn from_point_translation(origin: &Self, translation: &Self) -> Self {
             <Self as Magma<Additive>>::combine(origin, translation)
-        } fn translate_by(&self, t: &Self) -> Self {
+        }
+        fn translate_by(&self, t: &Self) -> Self {
             <Self as Magma<Additive>>::combine(self, t)
-        } fn translation(&self, other: &Self) -> Self {
+        }
+        fn translation(&self, other: &Self) -> Self {
             <Self as Magma<Additive>>::combine(other, &<Self as Group<Additive>>::inverse(self))
-        }};
+        }
+    };
 }
 
 #[cfg(test)]

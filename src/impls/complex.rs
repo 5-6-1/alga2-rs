@@ -2,9 +2,9 @@
 //!
 //! Addition is component-wise; multiplication is `(ac−bd) + (ad+bc)i`
 //! (needs `T`'s additive inverse, so the multiplicative side is defined over
-//! rings); the field inverse is `conj(z)/|z|²`. The method bodies are
-//! hand-written — a two-component algebra is clearer as plain `impl`s; only
-//! the marker levels ride `batch_trait!`.
+//! rings); the field inverse is `conj(z)/|z|²`. The simple component-wise
+//! levels ride `batch_trait!`; the bulky algebra (ring product, field
+//! inverse, complex-field and extension structure) is hand-written.
 
 use batch_impl::batch_trait;
 
@@ -15,56 +15,72 @@ use crate::tower::{
     Magma, Module, Monoid, Quasigroup, Real, Ring, Semigroup, Semiring, VectorSpace,
 };
 
-// ---- additive side: component-wise ----
+// ---- simple levels: component-wise, one batch_trait! block ----
 
-impl<T: Magma<Additive>> Magma<Additive> for Complex<T> {
-    fn combine(&self, rhs: &Self) -> Self {
-        Complex::new(
-            <T as Magma<Additive>>::combine(self.re(), rhs.re()),
-            <T as Magma<Additive>>::combine(self.im(), rhs.im()),
-        )
-    }
-}
-
-impl<T: Monoid<Additive>> Monoid<Additive> for Complex<T> {
-    fn identity() -> Self {
-        Complex::new(<T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity())
-    }
-}
-
-impl<T: Group<Additive>> Group<Additive> for Complex<T> {
-    fn inverse(&self) -> Self {
-        Complex::new(
-            <T as Group<Additive>>::inverse(self.re()),
-            <T as Group<Additive>>::inverse(self.im()),
-        )
-    }
-}
-
-// ---- multiplicative side: defined over rings (`ac−bd` needs the inverse) ----
-
-impl<T: Ring<Additive, Multiplicative>> Magma<Multiplicative> for Complex<T> {
-    fn combine(&self, rhs: &Self) -> Self {
-        Complex::new(
-            <T as Magma<Additive>>::combine(
-                &<T as Magma<Multiplicative>>::combine(self.re(), rhs.re()),
-                &<T as Group<Additive>>::inverse(&<T as Magma<Multiplicative>>::combine(
-                    self.im(),
-                    rhs.im(),
-                )),
-            ),
-            <T as Magma<Additive>>::combine(
-                &<T as Magma<Multiplicative>>::combine(self.re(), rhs.im()),
-                &<T as Magma<Multiplicative>>::combine(self.im(), rhs.re()),
-            ),
-        )
-    }
-}
-
-impl<T: Ring<Additive, Multiplicative>> Monoid<Multiplicative> for Complex<T> {
-    fn identity() -> Self {
-        Complex::new(<T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity())
-    }
+batch_trait! {
+    Magma: Magma<Additive> <T: @trait<>> Complex<T>{
+        fn combine(&self, rhs: &Self) -> Self {
+            Complex::new(
+                <T as Magma<>>::combine(self.re(), rhs.re()),
+                <T as Magma<>>::combine(self.im(), rhs.im()),
+            )
+        }
+    },
+        Magma<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>{
+        fn combine(&self, rhs: &Self) -> Self {
+            Complex::new(
+                <T as Magma<Additive>>::combine(
+                    &<T as Magma<Multiplicative>>::combine(self.re(), rhs.re()),
+                    &<T as Group<Additive>>::inverse(&<T as Magma<Multiplicative>>::combine(
+                        self.im(),
+                        rhs.im(),
+                    )),
+                ),
+                <T as Magma<Additive>>::combine(
+                    &<T as Magma<Multiplicative>>::combine(self.re(), rhs.im()),
+                    &<T as Magma<Multiplicative>>::combine(self.im(), rhs.re()),
+                ),
+            )
+        }
+    };
+    Semigroup: Semigroup<Additive> <T: @trait<>> Complex<T>,
+        Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
+    Monoid: Monoid<Additive> <T: @trait<>> Complex<T>{
+        fn identity() -> Self {
+            Complex::new(<T as Monoid<>>::identity(), <T as Monoid<>>::identity())
+        }
+    },
+        Monoid<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>{
+        fn identity() -> Self {
+            Complex::new(<T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity())
+        }
+    };
+    Quasigroup: Quasigroup<Additive> <T: @trait<>> Complex<T>;
+    Loop: Loop<Additive> <T: @trait<>> Complex<T>;
+    Group: Group<Additive> <T: @trait<>> Complex<T>{
+        fn inverse(&self) -> Self {
+            Complex::new(
+                <T as Group<>>::inverse(self.re()),
+                <T as Group<>>::inverse(self.im()),
+            )
+        }
+    };
+    AbelianGroup: AbelianGroup<Additive> <T: @trait<>> Complex<T>;
+    Semiring: Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
+    Ring: Ring<Additive, Multiplicative> <T: @trait<>> Complex<T>;
+    CommutativeRing: CommutativeRing<Additive, Multiplicative> <T: @trait<>> Complex<T>;
+    Field: Field<Additive, Multiplicative> <T: @trait<>> Complex<T>;
+    Module: Module<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>{
+        type Scalar = T;
+        fn scale(s: &Self::Scalar, v: Self) -> Self {
+            Complex::new(
+                <T as Magma<Multiplicative>>::combine(s, v.re()),
+                <T as Magma<Multiplicative>>::combine(s, v.im()),
+            )
+        }
+    };
+    VectorSpace: VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>
+        where{Self::Scalar: Field<Additive, Multiplicative>};
 }
 
 // ---- division-ring inverse: conj(z) / |z|² ----
@@ -82,19 +98,6 @@ impl<T: Field<Additive, Multiplicative>> DivisionRing<Additive, Multiplicative> 
                 &<T as Group<Additive>>::inverse(self.im()),
                 &inv_d,
             ),
-        )
-    }
-}
-
-// ---- module level: `Complex<T>` is a module over the real field `T` ----
-
-impl<T: Field<Additive, Multiplicative>> Module<Additive, Multiplicative> for Complex<T> {
-    type Scalar = T;
-
-    fn scale(s: &Self::Scalar, v: Self) -> Self {
-        Complex::new(
-            <T as Magma<Multiplicative>>::combine(s, v.re()),
-            <T as Magma<Multiplicative>>::combine(s, v.im()),
         )
     }
 }
@@ -140,22 +143,6 @@ impl<T: Real + Copy> FieldExtension<Additive, Multiplicative> for Complex<T> {
             &<T as Magma<Multiplicative>>::combine(self.im(), self.im()),
         )
     }
-}
-
-// ---- marker levels ----
-
-batch_trait! {
-    Semigroup: Semigroup<Additive> <T: @trait<>> Complex<T>,
-        Semigroup<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
-    Quasigroup: Quasigroup<Additive> <T: @trait<>> Complex<T>;
-    Loop: Loop<Additive> <T: @trait<>> Complex<T>;
-    AbelianGroup: AbelianGroup<Additive> <T: @trait<>> Complex<T>;
-    Semiring: Semiring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
-    Ring: Ring<Additive, Multiplicative> <T: @trait<>> Complex<T>;
-    CommutativeRing: CommutativeRing<Additive, Multiplicative> <T: @trait<>> Complex<T>;
-    Field: Field<Additive, Multiplicative> <T: @trait<>> Complex<T>;
-    VectorSpace: VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>
-        where{Self::Scalar: Field<Additive, Multiplicative>};
 }
 
 #[cfg(test)]
