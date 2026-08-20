@@ -31,13 +31,13 @@ trait Magma<Op: Operator> {
 
 // A smart pointer is a Magma for any operator its inner type is: pure
 // delegation through one deref — a single operator-generic spec covers
-// every operator (Additive/Multiplicative). The wrapper list `[Box,Rc,Arc]^T`
+// every operator (Additive/Multiplicative). The wrapper list `[Box,Rc,Arc].T`
 // mints all three targets; the `impl{Box<T>}` shape template binds `Box` to
 // each wrapper, so one `Box::new` body becomes `Rc::new`/`Arc::new` per
 // target.
 
 #[batch_impl_only(
-    <Op: Operator> Magma<Op> <T: Magma<Op>> [Box,Rc,Arc]^T impl{Box<T>}
+    <Op: Operator> Magma<Op> <T: Magma<Op>> [Box,Rc,Arc].T impl{Box<T>}
         #combine{Box::new((**self).combine(&**rhs))},
 )]
 trait Magma<Op: Operator> {
@@ -63,7 +63,7 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 }
 
 #[batch_impl_only(
-    <Op: Operator> Monoid<Op> <T: Monoid<Op>> [Box,Rc,Arc]^T impl{Box<T>}
+    <Op: Operator> Monoid<Op> <T: Monoid<Op>> [Box,Rc,Arc].T impl{Box<T>}
         #identity{Box::new(T::identity())},
 )]
 trait Monoid<Op: Operator>: Semigroup<Op> {
@@ -82,7 +82,7 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 
 batch_trait! {
     @ptr=[Box,Rc,Arc];
-    @impl=<T:@trait<> >@ptr^T;
+    @impl=<T:@trait<> >@ptr.T;
     Semigroup: <Op: Operator> Semigroup<Op> @impl;
     Quasigroup: <Op: Operator> Quasigroup<Op> @impl;
     Loop: <Op: Operator> Loop<Op> @impl;

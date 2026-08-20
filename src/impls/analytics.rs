@@ -171,7 +171,7 @@ trait BilinearForm {
 #[batch_impl_only(
     #crate::tower::EuclideanSpace:
     @f* #Coordinates{Self} #origin{0.} #from_coordinates{coords} #coordinates{*self},
-    (f64,)^1..=12 impl{(A@..,)} #Coordinates{(@(f64,)..)} #origin{(@(0.,)..)} #from_coordinates{coords} #coordinates{*self},
+    (f64,).1..=12 impl{(A@..,)} #Coordinates{(@(f64,)..)} #origin{(@(0.,)..)} #from_coordinates{coords} #coordinates{*self},
 )]
 trait EuclideanSpace: Sized + Clone + PartialEq {
     type Coordinates;

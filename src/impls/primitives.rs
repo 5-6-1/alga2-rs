@@ -6,7 +6,7 @@
 //! — the matrix supplies the quantity, every method body written exactly
 //! once.
 //!
-//! Integer operations are wrapping (mod 2^N): under `Additive`, `u8` is the
+//! Integer operations are wrapping (mod 2.N): under `Additive`, `u8` is the
 //! group Z/256Z, which plain `+` would break with an overflow panic in debug
 //! builds. Floats use plain arithmetic (an approximate field); `bool` is the
 //! exact two-element field (xor as `+`, and as `*`).
@@ -104,7 +104,7 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
 // trait signatures): one `batch_trait!` segment per trait.
 
 batch_trait! {
-    Semigroup: [Semigroup<Additive>,Semigroup<Multiplicative>]^[@num,bool];
+    Semigroup: [Semigroup<Additive>,Semigroup<Multiplicative>].[@num,bool];
     Quasigroup: Quasigroup<Additive> [@num, bool];
     Loop: Loop<Additive> [@num, bool];
     AbelianGroup: AbelianGroup<Additive> [@num, bool];

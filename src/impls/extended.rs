@@ -19,7 +19,7 @@ use crate::tower::{Band, BoundedLattice, EuclideanDomain, LieAlgebra, Monoid, Po
 #[batch_impl_only(
     [@u*, @i*] #top{Self::MAX} #bottom{Self::MIN},
     bool #top{true} #bottom{false},
-    (<BoundedLattice>,)^1..=12 impl{(A@..,)} #top{( @(@A::top(),).. )} #bottom{( @(@A::bottom(),).. )},
+    (<BoundedLattice>,).1..=12 impl{(A@..,)} #top{( @(@A::top(),).. )} #bottom{( @(@A::bottom(),).. )},
 )]
 trait BoundedLattice: Lattice {
     fn top() -> Self;
@@ -53,10 +53,10 @@ trait LieAlgebra<Op: Operator>: Magma<Op> {
 // Marker structures without directives: one `batch_trait!` segment each.
 
 batch_trait! {
-    Band: Band<Multiplicative> [bool, (<Band<> >,)^1..=16];
-    Power: [Power<Additive>,Power<Multiplicative>]^[@num,bool],
-        Power<Additive> (<Power<> >,)^1..=12,
-        Power<Multiplicative> (<Power<> >,)^1..=12;
+    Band: Band<Multiplicative> [bool, (<Band<> >,).1..=16];
+    Power: [Power<Additive>,Power<Multiplicative>].[@num,bool],
+        Power<Additive> (<Power<> >,).1..=12,
+        Power<Multiplicative> (<Power<> >,).1..=12;
 }
 
 #[cfg(test)]

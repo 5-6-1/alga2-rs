@@ -18,7 +18,7 @@ use crate::tower::{Magma, Monoid, Semigroup};
 
 #[batch_impl_only(
     <T: Magma<> > [Magma<Additive>, Magma<Multiplicative>]
-        ^ Option<T> #combine{match (self, rhs) { (Some(a), Some(b)) => Some(a.combine(b)), _ => None }},
+        . Option<T> #combine{match (self, rhs) { (Some(a), Some(b)) => Some(a.combine(b)), _ => None }},
 
 )]
 trait Magma<Op: Operator> {
@@ -27,13 +27,13 @@ trait Magma<Op: Operator> {
 
 #[batch_impl_only(
     <T: Semigroup<> >[ Semigroup<Additive>,
-    Semigroup<Multiplicative>]^Option<T>,
+    Semigroup<Multiplicative>].Option<T>,
 )]
 trait Semigroup<Op: Operator>: Magma<Op> {}
 
 #[batch_impl_only(
     <T: Monoid<> >[ Monoid<Additive> #identity{None},
-    Monoid<Multiplicative> #identity{Some(T::identity())}]^Option<T>
+    Monoid<Multiplicative> #identity{Some(T::identity())}].Option<T>
 )]
 trait Monoid<Op: Operator>: Semigroup<Op> {
     fn identity() -> Self;
