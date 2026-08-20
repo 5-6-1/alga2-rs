@@ -17,14 +17,18 @@ use crate::op::{Additive, Multiplicative};
 use crate::tower::{Magma, Monoid, Semigroup};
 
 batch_trait! {
-    Magma: <T: Magma<> > [Magma<Additive>, Magma<Multiplicative>] Option<T>
-        {fn combine(&self, rhs: &Self) -> Self {
+    Magma: <T: @trait<>> @trait[<Additive>,<Multiplicative>] Option<T>{
+        fn combine(&self, rhs: &Self) -> Self {
             match (self, rhs) { (Some(a), Some(b)) => Some(a.combine(b)), _ => None }
-        }};
-    Semigroup: <T: Semigroup<> > [Semigroup<Additive>, Semigroup<Multiplicative>] Option<T>;
-    Monoid: <T: Monoid<> > Monoid<Additive> Option<T> {fn identity() -> Self { None }},
-        <T: Monoid<> > Monoid<Multiplicative> Option<T>
-        {fn identity() -> Self { Some(T::identity()) }};
+        }
+    };
+    Semigroup: <T: @trait<>> @trait[<Additive>,<Multiplicative>] Option<T>;
+    // The identities differ (`None` vs `Some(T::identity())`): separate specs.
+    Monoid: <T: @trait<>> @trait<Additive> Option<T>{
+        fn identity() -> Self { None }
+    },  <T: @trait<>> @trait<Multiplicative> Option<T>{
+        fn identity() -> Self { Some(T::identity()) }
+    };
 }
 
 #[cfg(test)]

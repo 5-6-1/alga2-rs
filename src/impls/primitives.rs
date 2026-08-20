@@ -29,23 +29,46 @@ use crate::tower::{
 
 batch_trait! {
     @int=[@u*,@i*];
-    Magma: @trait<Additive> @int {fn combine(&self, rhs: &Self) -> Self { self.wrapping_add(*rhs) }},
-        @trait<Additive> @f* {fn combine(&self, rhs: &Self) -> Self { *self + *rhs }},
-        @trait<Additive> bool {fn combine(&self, rhs: &Self) -> Self { *self != *rhs }},
-        @trait<Multiplicative> @int {fn combine(&self, rhs: &Self) -> Self { self.wrapping_mul(*rhs) }},
-        @trait<Multiplicative> @f* {fn combine(&self, rhs: &Self) -> Self { *self * *rhs }},
-        @trait<Multiplicative> bool {fn combine(&self, rhs: &Self) -> Self { *self && *rhs }};
-    Monoid: @trait<Additive> @int {fn identity() -> Self { 0 }},
-        @trait<Additive> @f* {fn identity() -> Self { 0. }},
-        @trait<Additive> bool {fn identity() -> Self { false }},
-        @trait<Multiplicative> @int {fn identity() -> Self { 1 }},
-        @trait<Multiplicative> @f* {fn identity() -> Self { 1. }},
-        @trait<Multiplicative> bool {fn identity() -> Self { true }};
-    Group: @trait<Additive> @int {fn inverse(&self) -> Self { self.wrapping_neg() }},
-        @trait<Additive> @f* {fn inverse(&self) -> Self { -*self }},
-        @trait<Additive> bool {fn inverse(&self) -> Self { *self }};
-    DivisionRing: @trait<Additive, Multiplicative> @f* {fn inv(&self) -> Self { 1.0 / *self }},
-        @trait<Additive, Multiplicative> bool {fn inv(&self) -> Self { *self }};
+    Magma: @trait<Additive> [@int{
+        fn combine(&self, rhs: &Self) -> Self { self.wrapping_add(*rhs) }
+    }, @f*{
+        fn combine(&self, rhs: &Self) -> Self { *self + *rhs }
+    }, bool{
+        fn combine(&self, rhs: &Self) -> Self { *self != *rhs }
+    }],
+        @trait<Multiplicative> [@int{
+            fn combine(&self, rhs: &Self) -> Self { self.wrapping_mul(*rhs) }
+        }, @f*{
+            fn combine(&self, rhs: &Self) -> Self { *self * *rhs }
+        }, bool{
+            fn combine(&self, rhs: &Self) -> Self { *self && *rhs }
+        }];
+    Monoid: @trait<Additive> [@int{
+        fn identity() -> Self { 0 }
+    }, @f*{
+        fn identity() -> Self { 0. }
+    }, bool{
+        fn identity() -> Self { false }
+    }],
+        @trait<Multiplicative> [@int{
+            fn identity() -> Self { 1 }
+        }, @f*{
+            fn identity() -> Self { 1. }
+        }, bool{
+            fn identity() -> Self { true }
+        }];
+    Group: @trait<Additive> [@int{
+        fn inverse(&self) -> Self { self.wrapping_neg() }
+    }, @f*{
+        fn inverse(&self) -> Self { -*self }
+    }, bool{
+        fn inverse(&self) -> Self { *self }
+    }];
+    DivisionRing: @trait<Additive, Multiplicative> [@f*{
+        fn inv(&self) -> Self { 1.0 / *self }
+    }, bool{
+        fn inv(&self) -> Self { *self }
+    }];
     Semigroup: [Semigroup<Additive>,Semigroup<Multiplicative>] [@num,bool];
     Quasigroup: Quasigroup<Additive> [@num, bool];
     Loop: Loop<Additive> [@num, bool];
@@ -59,12 +82,16 @@ batch_trait! {
     VectorSpace: VectorSpace<Additive, Multiplicative> [@f*,bool] where{Self::Scalar: Field<Additive, Multiplicative>};
     FreeModule: FreeModule<Additive, Multiplicative> [@num, bool]
         {fn rank() -> usize { 1 } fn basis_element(_i: usize) -> Self { <Self as Monoid<Multiplicative>>::identity() } fn coordinate(&self, _i: usize) -> Self::Scalar { *self }};
-    Module: @trait<Additive, Multiplicative> @int
-        {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { s.wrapping_mul(v) }},
-        @trait<Additive, Multiplicative> @f*
-        {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { s * v }},
-        @trait<Additive, Multiplicative> bool
-        {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { *s && v }};
+    Module: @trait<Additive, Multiplicative> [@int{
+        type Scalar = Self;
+        fn scale(s: &Self::Scalar, v: Self) -> Self { s.wrapping_mul(v) }
+    }, @f*{
+        type Scalar = Self;
+        fn scale(s: &Self::Scalar, v: Self) -> Self { s * v }
+    }, bool{
+        type Scalar = Self;
+        fn scale(s: &Self::Scalar, v: Self) -> Self { *s && v }
+    }];
 }
 
 #[cfg(test)]

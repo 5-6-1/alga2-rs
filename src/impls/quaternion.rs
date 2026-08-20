@@ -20,6 +20,7 @@ use crate::tower::{
 // ---- simple levels: component-wise, one batch_trait! block ----
 
 batch_trait! {
+    @am=Additive, Multiplicative;
     Magma: @trait<Additive> <T: @trait<>> Quaternion<T>{
         fn combine(&self, rhs: &Self) -> Self {
             Quaternion::new(
@@ -65,9 +66,9 @@ batch_trait! {
         }
     };
     AbelianGroup: @trait<Additive> <T: @trait<>> Quaternion<T>;
-    Semiring: @trait<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
-    Ring: @trait<Additive, Multiplicative> <T: @trait<>> Quaternion<T>;
-    Module: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>{
+    Semiring: @trait<@am> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
+    Ring: @trait<@am> <T: @trait<>> Quaternion<T>;
+    Module: @trait<@am> <T: Field<Additive, Multiplicative>> Quaternion<T>{
         type Scalar = T;
         fn scale(s: &Self::Scalar, v: Self) -> Self {
             Quaternion::new(
@@ -78,12 +79,12 @@ batch_trait! {
             )
         }
     };
-    VectorSpace: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>
+    VectorSpace: @trait<@am> <T: Field<Additive, Multiplicative>> Quaternion<T>
         where{Self::Scalar: Field<Additive, Multiplicative>};
-    FiniteDimInnerSpace: @trait<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>;
+    FiniteDimInnerSpace: @trait<@am> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>;
     // Division ring inverse, the normed layer: structurally similar to the
     // complex versions, well under the 60-line reuse boundary.
-    DivisionRing: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative> + Copy> Quaternion<T>{
+    DivisionRing: @trait<@am> <T: Field<Additive, Multiplicative> + Copy> Quaternion<T>{
         fn inv(&self) -> Self {
             let conj = Quaternion::new(
                 *self.w(),
@@ -114,7 +115,7 @@ batch_trait! {
             )
         }
     };
-    NormedSpace: @trait<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
+    NormedSpace: @trait<@am> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
         type RealField = T;
         fn norm_squared(&self) -> Self::RealField {
             *self.w() * *self.w()
@@ -126,7 +127,7 @@ batch_trait! {
             Quaternion::new(*self.w() * r, *self.x() * r, *self.y() * r, *self.z() * r)
         }
     };
-    InnerSpace: @trait<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
+    InnerSpace: @trait<@am> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
         fn inner_product(&self, other: &Self) -> Self::RealField {
             *self.w() * *other.w()
                 + *self.x() * *other.x()
@@ -134,7 +135,7 @@ batch_trait! {
                 + *self.z() * *other.z()
         }
     };
-    FiniteDimVectorSpace: @trait<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
+    FiniteDimVectorSpace: @trait<@am> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
         fn dimension() -> usize { 4 }
         fn canonical_basis_element(_i: usize) -> Self {
             match _i {
