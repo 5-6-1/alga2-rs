@@ -69,14 +69,14 @@ pub use self::transform::{
     ProjectiveTransformation, Rotation, Scaling, Similarity, Transformation, Translation,
 };
 
-use crate::op::Operator;
+use crate::op::{Additive, Operator};
 
 /// A magma: a set closed under a binary operation.
 ///
 /// The operation itself lives in the impl: `combine` is `+` under
 /// [`Additive`](crate::op::Additive) and `*` under
 /// [`Multiplicative`](crate::op::Multiplicative).
-pub trait Magma<Op: Operator> {
+pub trait Magma<Op: Operator = Additive> {
     /// The binary operation.
     fn combine(&self, rhs: &Self) -> Self;
 }
@@ -86,25 +86,25 @@ pub trait Magma<Op: Operator> {
 /// `y·a = b` (a law in `crate::laws`). Every group is a quasigroup; note
 /// that `(R, ·)` over the full numeric set is **not** one (zero absorbs),
 /// which is why only the additive side of the matrix implements this.
-pub trait Quasigroup<Op: Operator>: Magma<Op> {}
+pub trait Quasigroup<Op: Operator = Additive>: Magma<Op> {}
 
 /// A loop: a [`Quasigroup`] with an identity element (a [`Monoid`]).
-pub trait Loop<Op: Operator>: Quasigroup<Op> + Monoid<Op> {}
+pub trait Loop<Op: Operator = Additive>: Quasigroup<Op> + Monoid<Op> {}
 
 /// A semigroup: an associative [`Magma`].
-pub trait Semigroup<Op: Operator>: Magma<Op> {}
+pub trait Semigroup<Op: Operator = Additive>: Magma<Op> {}
 
 /// A monoid: a [`Semigroup`] with an identity element.
-pub trait Monoid<Op: Operator>: Semigroup<Op> {
+pub trait Monoid<Op: Operator = Additive>: Semigroup<Op> {
     /// The identity element (`0` under `Additive`, `1` under `Multiplicative`).
     fn identity() -> Self;
 }
 
 /// A group: a [`Monoid`] with inverses (equivalently, an associative loop).
-pub trait Group<Op: Operator>: Loop<Op> {
+pub trait Group<Op: Operator = Additive>: Loop<Op> {
     /// The inverse of `self` (`-x` under `Additive`).
     fn inverse(&self) -> Self;
 }
 
 /// An abelian group: a [`Group`] whose operation commutes.
-pub trait AbelianGroup<Op: Operator>: Group<Op> {}
+pub trait AbelianGroup<Op: Operator = Additive>: Group<Op> {}
