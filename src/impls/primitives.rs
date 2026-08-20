@@ -15,7 +15,7 @@
 //! 45, semiring ladder 3 × 15 + Field 3 = 48, module level 15 + 3 vector
 //! spaces → 186 impls.
 
-use batch_impl::{batch_impl_only, batch_trait};
+use batch_impl::batch_trait;
 
 use crate::op::{Additive, Multiplicative};
 use crate::tower::{
@@ -23,87 +23,29 @@ use crate::tower::{
     Magma, Module, Monoid, Quasigroup, Ring, Semigroup, Semiring, VectorSpace,
 };
 
-// ---- one block per trait; the additive and multiplicative sides of a trait
-// ---- live in the same block, sharing one path prefix and one signature source ----
-
-#[batch_impl_only(
-    Magma<Additive> [
-        [@u*, @i*] #combine{self.wrapping_add(*rhs)},
-        @f* #combine{*self + *rhs},
-        bool #combine{*self != *rhs}
-    ],
-    Magma<Multiplicative> [
-        [@u*, @i*] #combine{self.wrapping_mul(*rhs)},
-        @f* #combine{*self * *rhs},
-        bool #combine{*self && *rhs}
-    ]
-)]
-trait Magma<Op: Operator> {
-    fn combine(&self, rhs: &Self) -> Self;
-}
-
-#[batch_impl_only(
-    Monoid<Additive> [
-        [@u*, @i*] #identity{0},
-        @f* #identity{0.},
-        bool #identity{false}
-    ],
-    Monoid<Multiplicative> [
-        [@u*, @i*] #identity{1},
-        @f* #identity{1.},
-        bool #identity{true}
-    ]
-)]
-trait Monoid<Op: Operator>: Semigroup<Op> {
-    fn identity() -> Self;
-}
-
-// The multiplicative ladder stops at Monoid for the numerics: integers have
-// no multiplicative inverses and floats exclude zero, so Group<Mul> would
-// have no inhabitants here.
-
-#[batch_impl_only(
-    Group<Additive> [
-        [@u*, @i*] #inverse{self.wrapping_neg()},
-        @f* #inverse{-*self},
-        bool #inverse{*self}
-    ]
-)]
-trait Group<Op: Operator>: Loop<Op> {
-    fn inverse(&self) -> Self;
-}
-
-// ---- semiring ladder: Semiring → Ring → CommutativeRing → Field ----
-// `bool` is the two-element field F₂ (xor as `+`, and as `*`).
-
-#[batch_impl_only(
-    DivisionRing<Additive, Multiplicative> [
-        @f* #inv{1.0 / *self},
-        bool #inv{*self}
-    ]
-)]
-trait DivisionRing<Oa: Operator, Om: Operator>: Ring<Oa, Om> {
-    fn inv(&self) -> Self;
-}
-
-// ---- module level: every numeric is a module over itself ----
-
-#[batch_impl_only(
-    Module<Additive, Multiplicative> [
-        [@u*, @i*] #Scalar{Self} #scale{s.wrapping_mul(v)},
-        @f* #Scalar{Self} #scale{s * v},
-        bool #Scalar{Self} #scale{*s && v},
-    ]
-)]
-trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
-    type Scalar;
-    fn scale(s: &Self::Scalar, v: Self) -> Self;
-}
-
-// Marker levels and simple methods need no directives (and no duplicated
-// trait signatures): one `batch_trait!` segment per trait.
+// ---- one batch_trait! block: every numeric level, additive and
+// ---- multiplicative sides merged; the `@int` constant reuses the integer
+// ---- matrix across both operators — zero duplication ----
 
 batch_trait! {
+    @int=[@u*,@i*];
+    Magma: Magma<Additive> @int {fn combine(&self, rhs: &Self) -> Self { self.wrapping_add(*rhs) }},
+        Magma<Additive> @f* {fn combine(&self, rhs: &Self) -> Self { *self + *rhs }},
+        Magma<Additive> bool {fn combine(&self, rhs: &Self) -> Self { *self != *rhs }},
+        Magma<Multiplicative> @int {fn combine(&self, rhs: &Self) -> Self { self.wrapping_mul(*rhs) }},
+        Magma<Multiplicative> @f* {fn combine(&self, rhs: &Self) -> Self { *self * *rhs }},
+        Magma<Multiplicative> bool {fn combine(&self, rhs: &Self) -> Self { *self && *rhs }};
+    Monoid: Monoid<Additive> @int {fn identity() -> Self { 0 }},
+        Monoid<Additive> @f* {fn identity() -> Self { 0. }},
+        Monoid<Additive> bool {fn identity() -> Self { false }},
+        Monoid<Multiplicative> @int {fn identity() -> Self { 1 }},
+        Monoid<Multiplicative> @f* {fn identity() -> Self { 1. }},
+        Monoid<Multiplicative> bool {fn identity() -> Self { true }};
+    Group: Group<Additive> @int {fn inverse(&self) -> Self { self.wrapping_neg() }},
+        Group<Additive> @f* {fn inverse(&self) -> Self { -*self }},
+        Group<Additive> bool {fn inverse(&self) -> Self { *self }};
+    DivisionRing: DivisionRing<Additive, Multiplicative> @f* {fn inv(&self) -> Self { 1.0 / *self }},
+        DivisionRing<Additive, Multiplicative> bool {fn inv(&self) -> Self { *self }};
     Semigroup: [Semigroup<Additive>,Semigroup<Multiplicative>] [@num,bool];
     Quasigroup: Quasigroup<Additive> [@num, bool];
     Loop: Loop<Additive> [@num, bool];
@@ -117,6 +59,12 @@ batch_trait! {
     VectorSpace: VectorSpace<Additive, Multiplicative> [@f*,bool] where{Self::Scalar: Field<Additive, Multiplicative>};
     FreeModule: FreeModule<Additive, Multiplicative> [@num, bool]
         {fn rank() -> usize { 1 } fn basis_element(_i: usize) -> Self { <Self as Monoid<Multiplicative>>::identity() } fn coordinate(&self, _i: usize) -> Self::Scalar { *self }};
+    Module: Module<Additive, Multiplicative> @int
+        {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { s.wrapping_mul(v) }},
+        Module<Additive, Multiplicative> @f*
+        {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { s * v }},
+        Module<Additive, Multiplicative> bool
+        {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { *s && v }};
 }
 
 #[cfg(test)]
