@@ -31,6 +31,7 @@ pub mod lie;
 pub mod matrix;
 pub mod module;
 pub mod norm;
+pub mod polynomial;
 pub mod pow;
 pub mod real;
 pub mod semiring;
@@ -53,6 +54,7 @@ pub use self::lie::LieAlgebra;
 pub use self::matrix::{InversibleSquareMatrix, Matrix, MatrixMut, SquareMatrix, SquareMatrixMut};
 pub use self::module::{FreeModule, LinearMap, Module, VectorSpace};
 pub use self::norm::{FiniteDimInnerSpace, FiniteDimVectorSpace, InnerSpace, NormedSpace};
+pub use self::polynomial::Polynomial;
 pub use self::pow::Power;
 pub use self::real::{ComplexField, Real};
 pub use self::semiring::{

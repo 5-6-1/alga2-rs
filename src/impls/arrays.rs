@@ -1,6 +1,7 @@
 //! Array impls: `[T; N]` is component-wise, like tuples, but without the
 //! std arity ceiling — arrays of any `N` carry `Clone`/`PartialEq`/etc., so
 //! the whole tower runs on `[T; N]` (contrast the tuple caps in `tuples.rs`).
+//! A `[C; N]` array is also a polynomial over `C` (fixed-length dense form).
 
 use batch_impl::{batch_impl_only, batch_trait};
 
@@ -9,6 +10,31 @@ use crate::tower::{
     AbelianGroup, CommutativeRing, Field, FreeModule, Group, Loop, Magma, Module, Monoid,
     Quasigroup, Ring, Semigroup, Semiring, VectorSpace,
 };
+
+// ---- polynomials: a fixed-length coefficient array ----
+
+#[batch_impl_only(
+    #crate::tower::Polynomial:
+    <C: Ring<Additive, Multiplicative> + PartialEq + Clone, const N: usize> [C; N]
+        #Coefficient{C}
+        #degree{
+            let zero = <C as Monoid<Additive>>::identity();
+            let mut d = 0usize;
+            for i in (0..N).rev() {
+                if self[i] != zero {
+                    d = i;
+                    break;
+                }
+            }
+            d
+        }
+        #coefficient{self[i].clone()},
+)]
+trait Polynomial: Sized + Clone {
+    type Coefficient;
+    fn degree(&self) -> usize;
+    fn coefficient(&self, i: usize) -> Self::Coefficient;
+}
 
 #[batch_impl_only(
     Magma<Additive> <T: Magma<Additive>, const N: usize> [T; N]
@@ -96,5 +122,18 @@ mod tests {
         let b20 = [2u8; 20];
         let s20 = <[u8; 20] as Magma<Additive>>::combine(&a20, &b20);
         assert_eq!(s20, [3u8; 20]);
+    }
+
+    #[test]
+    fn arrays_are_polynomials() {
+        use crate::tower::Polynomial;
+        // 2 + 3x + 0x² + 4x³ → degree 3.
+        let p = [2u8, 3, 0, 4];
+        assert_eq!(p.degree(), 3);
+        assert_eq!(p.coefficient(0), 2);
+        assert_eq!(p.coefficient(3), 4);
+        // The zero polynomial has degree 0.
+        let z = [0u8, 0, 0, 0];
+        assert_eq!(z.degree(), 0);
     }
 }
