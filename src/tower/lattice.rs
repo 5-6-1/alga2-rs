@@ -57,3 +57,18 @@ pub trait BoundedLattice: Lattice {
     /// The least element.
     fn bottom() -> Self;
 }
+
+/// A distributive lattice: meet distributes over join and join over meet
+/// (the distributivity laws are in `crate::laws`).
+pub trait DistributiveLattice: Lattice {}
+
+/// A complemented lattice: every element has a complement — `a ∨ ¬a = ⊤`
+/// and `a ∧ ¬a = ⊥` (laws).
+pub trait ComplementedLattice: BoundedLattice {
+    /// The complement of `self`.
+    fn complement(&self) -> Self;
+}
+
+/// A boolean algebra: a complemented distributive lattice. `bool` with
+/// `&&`/`||`/`!` is the canonical two-element example.
+pub trait BooleanAlgebra: DistributiveLattice + ComplementedLattice {}

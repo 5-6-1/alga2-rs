@@ -13,12 +13,14 @@
 //! (HashMap/HashSet) needs `std`.
 
 pub(crate) mod analytics;
+pub(crate) mod arrays;
 pub(crate) mod complex;
 #[cfg(feature = "alloc")]
 pub(crate) mod containers;
 pub(crate) mod extended;
 #[cfg(feature = "std")]
 pub(crate) mod maps;
+pub(crate) mod modn;
 pub(crate) mod option;
 pub(crate) mod primitives;
 pub(crate) mod quaternion;

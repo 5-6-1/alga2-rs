@@ -39,10 +39,10 @@ use proptest::prelude::*;
 
 use crate::op::{Additive, Multiplicative, Operator};
 use crate::tower::{
-    AbelianGroup, Band, BilinearForm, CommutativeRing, DivisionRing, EuclideanDomain, Field,
-    FieldExtension, FreeModule, Group, Lattice, LieAlgebra, Magma, Module, Monoid, OrderedField,
-    PositiveDefinite, Quasigroup, Ring, Semiring, SymmetricBilinearForm, TensorProduct,
-    VectorSpace,
+    AbelianGroup, Band, BilinearForm, CommutativeRing, ComplementedLattice, DistributiveLattice,
+    DivisionRing, EuclideanDomain, Field, FieldExtension, FreeModule, Group, IntegralDomain,
+    Lattice, LieAlgebra, LinearMap, Magma, Module, Monoid, OrderedField, PositiveDefinite,
+    Quasigroup, Ring, Semiring, SymmetricBilinearForm, TensorProduct, VectorSpace,
 };
 
 /// Associativity: `(a·b)·c == a·(b·c)`.
@@ -288,6 +288,75 @@ where
     Ok(())
 }
 
+/// Integral-domain law: no zero divisors — `a·b = 0` implies `a = 0` or
+/// `b = 0` — and `0 != 1`.
+pub fn integral_domain_laws<Oa: Operator, Om: Operator, T>(a: T, b: T) -> Result<(), TestCaseError>
+where
+    T: IntegralDomain<Oa, Om> + Copy + PartialEq + Debug + Monoid<Oa> + Monoid<Om>,
+{
+    let zero = <T as Monoid<Oa>>::identity();
+    let one = <T as Monoid<Om>>::identity();
+    prop_assert_ne!(zero, one);
+    let ab = <T as Magma<Om>>::combine(&a, &b);
+    if ab == zero {
+        prop_assert!(a == zero || b == zero);
+    }
+    Ok(())
+}
+
+/// Distributivity of a lattice: `a ∧ (b ∨ c) == (a ∧ b) ∨ (a ∧ c)` and the
+/// mirror `a ∨ (b ∧ c) == (a ∨ b) ∧ (a ∨ c)`.
+pub fn lattice_distributivity<T>(a: T, b: T, c: T) -> Result<(), TestCaseError>
+where
+    T: DistributiveLattice + PartialEq + Debug,
+{
+    prop_assert_eq!(a.meet(&b.join(&c)), a.meet(&b).join(&a.meet(&c)));
+    prop_assert_eq!(a.join(&b.meet(&c)), a.join(&b).meet(&a.join(&c)));
+    Ok(())
+}
+
+/// Complement laws: `a ∨ ¬a == top` and `a ∧ ¬a == bottom`.
+pub fn complemented_lattice_laws<T>(a: T) -> Result<(), TestCaseError>
+where
+    T: ComplementedLattice + PartialEq + Debug,
+{
+    prop_assert_eq!(a.join(&a.complement()), T::top());
+    prop_assert_eq!(a.meet(&a.complement()), T::bottom());
+    Ok(())
+}
+
+/// Linearity of a map: `f(u + v) == f(u) + f(v)`.
+pub fn linear_map_additive<Oa: Operator, Om: Operator, M>(
+    f: M, u: M::Domain, v: M::Domain,
+) -> Result<(), TestCaseError>
+where
+    M: LinearMap<Oa, Om> + Clone,
+    M::Domain: Magma<Oa> + PartialEq + Debug,
+    M::Codomain: Magma<Oa> + PartialEq + Debug,
+{
+    let lhs = f.apply(&<M::Domain as Magma<Oa>>::combine(&u, &v));
+    let rhs = <M::Codomain as Magma<Oa>>::combine(&f.apply(&u), &f.apply(&v));
+    prop_assert_eq!(lhs, rhs);
+    Ok(())
+}
+
+/// Linearity of a map in the scalar: `f(s·u) == s·f(u)`.
+pub fn linear_map_scalar<Oa: Operator, Om: Operator, M>(
+    f: M, s: <M::Domain as Module<Oa, Om>>::Scalar, u: M::Domain,
+) -> Result<(), TestCaseError>
+where
+    M: LinearMap<Oa, Om> + Clone,
+    M::Domain: Module<Oa, Om> + Clone + PartialEq + Debug,
+    M::Codomain: Module<Oa, Om> + PartialEq + Debug,
+    <M::Domain as Module<Oa, Om>>::Scalar: Magma<Om> + Copy,
+{
+    let su = <M::Domain as Module<Oa, Om>>::scale(&s, u.clone());
+    let lhs = f.apply(&su);
+    let rhs = <M::Codomain as Module<Oa, Om>>::scale(&s, f.apply(&u));
+    prop_assert_eq!(lhs, rhs);
+    Ok(())
+}
+
 /// Free-module basis law: the `j`-th coordinate of the `i`-th basis element
 /// is the scalar `1` on the diagonal and `0` off it.
 pub fn free_module_basis<Oa: Operator, Om: Operator, T>(
@@ -443,6 +512,7 @@ where
 mod tests {
     use super::*;
     use crate::complex::Complex;
+    use crate::modn::ModN;
 
     proptest! {
         #[test]
@@ -623,13 +693,19 @@ mod tests {
 
         // Lattices: absorption on the numerics (exact) and tuples.
         #[test]
-        fn u8_lattice_laws(a: u8, b: u8) {
+        fn u8_lattice_laws(a: u8, b: u8, c: u8) {
             lattice_absorption(a, b)?;
+            lattice_distributivity(a, b, c)?;
         }
 
         #[test]
         fn tuple_lattice_laws(a: (u8, u8), b: (u8, u8)) {
             lattice_absorption(a, b)?;
+        }
+
+        #[test]
+        fn bool_boolean_algebra(a: bool) {
+            complemented_lattice_laws(a)?;
         }
 
         // Extended structures.
@@ -664,6 +740,42 @@ mod tests {
         fn tensor_product_laws(a: i32, b: i32, c: i32) {
             tensor_bilinear_left::<Additive, Tensor2>(a, b, c)?;
             tensor_bilinear_right::<Additive, Tensor2>(a, b, c)?;
+        }
+
+        // ModN: the prime-modulus finite field Z/97Z — exact laws (field,
+        // integral domain, euclidean division) all hold.
+        #[test]
+        fn modn_field_laws(a: usize, b: usize, c: usize) {
+            let a = ModN::<97>::new(a);
+            let b = ModN::<97>::new(b);
+            let c = ModN::<97>::new(c);
+            field_laws(a, b, c)?;
+            integral_domain_laws(a, b)?;
+            euclidean_division(a, b)?;
+        }
+
+        // Linear maps: the scaling map v ↦ s·v on Z/97Z (exact).
+        #[test]
+        fn linear_map_laws(s: usize, u: usize, v: usize) {
+            let s = ModN::<97>::new(s);
+            let u = ModN::<97>::new(u);
+            let v = ModN::<97>::new(v);
+            let f = Scale(s);
+            linear_map_additive::<Additive, Multiplicative, Scale>(f, u, v)?;
+            linear_map_scalar::<Additive, Multiplicative, Scale>(f, s, u)?;
+        }
+    }
+
+    // A scalar-scaling linear map: `v ↦ s·v` on the prime modulus field.
+    #[derive(Clone, Copy)]
+    struct Scale(ModN<97>);
+
+    impl LinearMap<Additive, Multiplicative> for Scale {
+        type Domain = ModN<97>;
+        type Codomain = ModN<97>;
+
+        fn apply(&self, v: &Self::Domain) -> Self::Codomain {
+            <ModN<97> as Module<Additive, Multiplicative>>::scale(&self.0, *v)
         }
     }
 

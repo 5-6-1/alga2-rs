@@ -46,3 +46,22 @@ pub trait FreeModule<Oa: Operator, Om: Operator>: Module<Oa, Om> {
     /// The coordinate of `self` along the `i`-th basis element.
     fn coordinate(&self, i: usize) -> Self::Scalar;
 }
+
+/// A linear map between two vector spaces over the same field.
+///
+/// The linearity laws (`linear_map_additive`, `linear_map_scalar`) are in
+/// `crate::laws`. Concrete matrices implement this; the tower only declares
+/// the shape.
+pub trait LinearMap<Oa: Operator, Om: Operator>
+where
+    <Self::Domain as Module<Oa, Om>>::Scalar: Field<Oa, Om>,
+{
+    /// The domain vector space.
+    type Domain: VectorSpace<Oa, Om>;
+
+    /// The codomain vector space (over the same scalar field).
+    type Codomain: VectorSpace<Oa, Om, Scalar = <Self::Domain as Module<Oa, Om>>::Scalar>;
+
+    /// Applies the map to `v`.
+    fn apply(&self, v: &Self::Domain) -> Self::Codomain;
+}

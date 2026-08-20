@@ -22,6 +22,7 @@ pub mod complex;
 // is std-only and must never leak into the bare core build).
 #[cfg(any(test, feature = "proptest"))]
 pub mod laws;
+pub mod modn;
 pub mod op;
 pub mod quaternion;
 pub mod tower;

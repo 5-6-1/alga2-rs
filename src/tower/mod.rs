@@ -45,16 +45,19 @@ pub use self::closed::{ClosedAdd, ClosedDiv, ClosedMul, ClosedNeg, ClosedSub};
 pub use self::euclid::{AffineSpace, EuclideanSpace};
 pub use self::euclidean::EuclideanDomain;
 pub use self::id::Id;
-pub use self::lattice::{BoundedLattice, JoinSemilattice, Lattice, MeetSemilattice};
+pub use self::lattice::{
+    BooleanAlgebra, BoundedLattice, ComplementedLattice, DistributiveLattice, JoinSemilattice,
+    Lattice, MeetSemilattice,
+};
 pub use self::lie::LieAlgebra;
 pub use self::matrix::{InversibleSquareMatrix, Matrix, MatrixMut, SquareMatrix, SquareMatrixMut};
-pub use self::module::{FreeModule, Module, VectorSpace};
+pub use self::module::{FreeModule, LinearMap, Module, VectorSpace};
 pub use self::norm::{FiniteDimInnerSpace, FiniteDimVectorSpace, InnerSpace, NormedSpace};
 pub use self::pow::Power;
 pub use self::real::{ComplexField, Real};
 pub use self::semiring::{
     CommutativeRing, DivisionRing, Field, FieldExtension, FieldExtensionTower, FiniteField,
-    OrderedField, Ring, Semiring,
+    IntegralDomain, OrderedField, PrincipalIdealDomain, Ring, Semiring, UniqueFactorizationDomain,
 };
 pub use self::star::StarSemiring;
 pub use self::subset::{SubsetOf, SupersetOf};
