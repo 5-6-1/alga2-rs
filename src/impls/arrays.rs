@@ -14,11 +14,11 @@ use crate::tower::{
 
 // ---- polynomials: a fixed-length coefficient array (hand-written) ----
 
-impl<C: Ring<Additive, Multiplicative> + PartialEq + Clone, const N: usize> Polynomial for [C; N] {
+impl<C: Ring + PartialEq + Clone, const N: usize> Polynomial for [C; N] {
     type Coefficient = C;
 
     fn degree(&self) -> usize {
-        let zero = <C as Monoid<Additive>>::identity();
+        let zero = <C as Monoid>::identity();
         let mut d = 0usize;
         for i in (0..N).rev() {
             if self[i] != zero {
@@ -72,12 +72,12 @@ batch_trait! {
     VectorSpace: @with2 where T:Copy, Self::Scalar: Field<>;
     // `[T; N]` is the free module R^N when the components are scalars
     // (`T` itself a monoid under both operators — the numerics, `ModN`).
-    FreeModule: @with2_impl where T:Monoid<Additive> + Monoid<Multiplicative> + Copy{
+    FreeModule: @with2_impl where T:Monoid + Monoid<Multiplicative> + Copy{
         fn rank() -> usize { N } fn basis_element(_i: usize) -> Self {
             core::array::from_fn(|i| if i == _i {
                 <T as Monoid<Multiplicative>>::identity()
             } else {
-                <T as Monoid<Additive>>::identity()
+                <T as Monoid>::identity()
             })
         }
         fn coordinate(&self, i: usize) -> Self::Scalar {

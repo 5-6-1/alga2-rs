@@ -24,11 +24,11 @@ batch_trait! {
     };
     Semigroup: <T: @trait<>> @trait[<Additive>,<Multiplicative>] Option<T>;
     // The identities differ (`None` vs `Some(T::identity())`): separate specs.
-    Monoid: <T: @trait<>> @trait Option<T>{
+    Monoid: <T: @trait<>>[{
         fn identity() -> Self { None }
-    },  <T: @trait<>> @trait<Multiplicative> Option<T>{
+    },  @trait<Multiplicative>{
         fn identity() -> Self { Some(T::identity()) }
-    };
+    }] Option<T>;
 }
 
 #[cfg(test)]

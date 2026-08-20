@@ -122,11 +122,11 @@ batch_trait! {
             if _i == 0 {
                 Complex::new(
                     <T as Monoid<Multiplicative>>::identity(),
-                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid>::identity(),
                 )
             } else {
                 Complex::new(
-                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid>::identity(),
                     <T as Monoid<Multiplicative>>::identity(),
                 )
             }
@@ -166,13 +166,13 @@ batch_trait! {
     AffineSpace: @f*{
         type Translation = Self; fn origin() -> Self { 0. }
         fn from_point_translation(origin: &Self, translation: &Self) -> Self {
-            <Self as Magma<Additive>>::combine(origin, translation)
+            <Self as Magma>::combine(origin, translation)
         }
         fn translate_by(&self, t: &Self) -> Self {
-            <Self as Magma<Additive>>::combine(self, t)
+            <Self as Magma>::combine(self, t)
         }
         fn translation(&self, other: &Self) -> Self {
-            <Self as Magma<Additive>>::combine(other, &<Self as Group<Additive>>::inverse(self))
+            <Self as Magma>::combine(other, &<Self as Group>::inverse(self))
         }
     };
 }

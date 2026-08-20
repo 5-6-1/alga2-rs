@@ -20,37 +20,37 @@ batch_trait! {
     @am=Additive, Multiplicative;
     @pmod=<const P: usize> ModN<P>;
     Magma: @trait[
-        <Additive>{
+        {
             fn combine(&self, rhs: &Self) -> Self { ModN::new(self.value().wrapping_add(rhs.value())) }
         },
         <Multiplicative>{
             fn combine(&self, rhs: &Self) -> Self { ModN::new(self.value().wrapping_mul(rhs.value())) }
         }]@pmod;
     Semigroup: @trait[<Additive>,<Multiplicative>] @pmod;
-    Monoid: @trait[
-        <Additive> {
+    Monoid: [
+        {
             fn identity() -> Self { ModN::new(0) }
         },
-        <Multiplicative> {
+        @trait <Multiplicative> {
             fn identity() -> Self { ModN::new(1) }
         }]@pmod;
-    Quasigroup: @trait<Additive> @pmod;
-    Loop: @trait<Additive> @pmod;
-    Group: @trait<Additive> @pmod{
+    Quasigroup: @pmod;
+    Loop: @pmod;
+    Group: @pmod{
         fn inverse(&self) -> Self { ModN::new(P.wrapping_sub(self.value()).wrapping_rem(P)) }
     };
-    AbelianGroup: @trait<Additive> @pmod;
-    Semiring: @trait<@am> @pmod;
-    Ring: @trait<@am> @pmod;
-    CommutativeRing: @trait<@am> @pmod;
-    Field: @trait<@am> @pmod;
-    FiniteField: @trait<@am> @pmod{
+    AbelianGroup: @pmod;
+    Semiring: @pmod;
+    Ring: @pmod;
+    CommutativeRing: @pmod;
+    Field: @pmod;
+    FiniteField: @pmod{
         fn characteristic() -> u64 { P as u64 }
         fn order() -> u64 { P as u64 }
     };
-    IntegralDomain: @trait<@am> @pmod;
-    UniqueFactorizationDomain: @trait<@am> @pmod;
-    PrincipalIdealDomain: @trait<@am> @pmod;
+    IntegralDomain: @pmod;
+    UniqueFactorizationDomain: @pmod;
+    PrincipalIdealDomain: @pmod;
     Module: @trait<@am,Scalar=Self> @pmod{
         fn scale(s: &Self::Scalar, v: Self) -> Self { ModN::new(s.value().wrapping_mul(v.value())) }
     };
@@ -65,7 +65,7 @@ batch_trait! {
     // exact when `P` is prime (the residue is then coprime to `P`); for
     // composite `P` a non-invertible residue yields a meaningless
     // coefficient, so `Field` is documented as "for prime `P`".
-    DivisionRing: @trait<@am> @pmod{
+    DivisionRing: @pmod{
         fn inv(&self) -> Self {
             // Extended euclid; Bézout coefficients may go negative, so they
             // run in i128 and reduce via rem_euclid.

@@ -75,12 +75,12 @@ batch_trait! {
     @tr_tup_to=(<@trait<> >,).1..=;
     @am=Additive, Multiplicative;
     Semigroup: @trait[<Additive>, <Multiplicative>] @tr_tup_to 16;
-    Quasigroup: @trait @tr_tup_to 16;
-    Loop: @trait @tr_tup_to 16;
-    AbelianGroup: @trait @tr_tup_to 16;
-    Semiring: @trait<@am> @tr_tup_to 16;
-    Ring: @trait<@am> @tr_tup_to 16;
-    CommutativeRing: @trait<@am> @tr_tup_to 16;
+    Quasigroup: @tr_tup_to 16;
+    Loop: @tr_tup_to 16;
+    AbelianGroup: @tr_tup_to 16;
+    Semiring: @tr_tup_to 16;
+    Ring: @tr_tup_to 16;
+    CommutativeRing: @tr_tup_to 16;
     VectorSpace: @trait<@am> @tr_tup_to 16 where
         @1..: @trait<@am,Scalar = @0::Scalar>,
         Self::Scalar: Field<@am>,

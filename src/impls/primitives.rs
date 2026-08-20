@@ -30,17 +30,15 @@ use crate::tower::{
 batch_trait! {
     @int=[@u*,@i*];
     @pri=[@num, bool];
-    @tr_add=@trait;
     @tr_mul=@trait<Multiplicative>;
     @tr_am=@trait<Additive,Multiplicative>;
-    Magma: @tr_add [
-        @int{
+    Magma:@int{
             fn combine(&self, rhs: &Self) -> Self { self.wrapping_add(*rhs) }
         }, @f*{
             fn combine(&self, rhs: &Self) -> Self { *self + *rhs }
         }, bool{
             fn combine(&self, rhs: &Self) -> Self { *self != *rhs }
-        }],
+        },
         @tr_mul [@int{
             fn combine(&self, rhs: &Self) -> Self { self.wrapping_mul(*rhs) }
         }, @f*{
@@ -48,14 +46,13 @@ batch_trait! {
         }, bool{
             fn combine(&self, rhs: &Self) -> Self { *self && *rhs }
         }];
-    Monoid: @tr_add [
-        @int{
+    Monoid:@int{
             fn identity() -> Self { 0 }
         }, @f*{
             fn identity() -> Self { 0. }
         }, bool{
             fn identity() -> Self { false }
-        }],
+        },
         @tr_mul [
         @int{
             fn identity() -> Self { 1 }
@@ -64,31 +61,31 @@ batch_trait! {
         }, bool{
             fn identity() -> Self { true }
         }];
-    Group: @tr_add [@int{
+    Group: @int{
         fn inverse(&self) -> Self { self.wrapping_neg() }
     }, @f*{
         fn inverse(&self) -> Self { -*self }
     }, bool{
         fn inverse(&self) -> Self { *self }
-    }];
-    DivisionRing: @tr_am [@f*{
+    };
+    DivisionRing: @f*{
         fn inv(&self) -> Self { 1.0 / *self }
     }, bool{
         fn inv(&self) -> Self { *self }
-    }];
+    };
     Semigroup: @trait[<Additive>,<Multiplicative>] @pri;
-    Quasigroup: @tr_add @pri;
-    Loop: @tr_add @pri;
-    AbelianGroup: @tr_add @pri;
+    Quasigroup: @pri;
+    Loop: @pri;
+    AbelianGroup: @pri;
     Semiring: @tr_am @pri;
     Ring: @tr_am @pri;
     CommutativeRing: @tr_am @pri;
-    Field: @tr_am [@f*, bool];
-    FiniteField: @tr_am bool{
+    Field: [@f*, bool];
+    FiniteField: bool{
         fn characteristic() -> u64 { 2 }
         fn order() -> u64 { 2 }
     };
-    VectorSpace: @tr_am [@f*,bool] where Self::Scalar: Field<>;
+    VectorSpace: @tr_am [@f*,bool] where Self::Scalar: Field;
     FreeModule: @tr_am @pri{
         fn rank() -> usize { 1 }
         fn basis_element(_i: usize) -> Self { <Self as Monoid<Multiplicative>>::identity() }

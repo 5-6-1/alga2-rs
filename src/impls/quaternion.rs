@@ -21,10 +21,9 @@ use crate::tower::{
 
 batch_trait! {
     @am=Additive, Multiplicative;
-    @tr_add=@trait<Additive> <T: @trait<>> Quaternion<T>;
-    @tr_mul=@trait<Multiplicative> <T: Ring<@am>> Quaternion<T>;
-    @tr_am=@trait<@am> <T: Ring<>> Quaternion<T>;
-    Magma: @tr_add{
+    @with=<T: @trait> Quaternion<T>;
+    @tr_mul=@trait<Multiplicative> <T: Ring> Quaternion<T>;
+    Magma: @with{
         fn combine(&self, rhs: &Self) -> Self {
             Quaternion::new(
                 <T as Magma>::combine(self.w(), rhs.w()),
@@ -34,8 +33,8 @@ batch_trait! {
             )
         }
     };
-    Semigroup: @tr_add,@tr_mul;
-    Monoid: @tr_add{
+    Semigroup: @with,@tr_mul;
+    Monoid: @with{
         fn identity() -> Self {
             Quaternion::new(
                 <T as Monoid>::identity(),
@@ -55,9 +54,9 @@ batch_trait! {
             )
         }
     };
-    Quasigroup: @tr_add;
-    Loop: @tr_add;
-    Group: @tr_add{
+    Quasigroup: @with;
+    Loop: @with;
+    Group: @with{
         fn inverse(&self) -> Self {
             Quaternion::new(
                 <T as Group>::inverse(self.w()),
@@ -67,10 +66,10 @@ batch_trait! {
             )
         }
     };
-    AbelianGroup: @tr_add;
-    Semiring: @tr_am;
-    Ring: @trait<@am> <T: @trait<>> Quaternion<T>;
-    Module: @trait<@am> <T: Field<>> Quaternion<T>{
+    AbelianGroup: @with;
+    Semiring: @trait<@am> <T: Ring> Quaternion<T>;
+    Ring: <T: @trait> Quaternion<T>;
+    Module: @trait<@am> <T: Field> Quaternion<T>{
         type Scalar = T;
         fn scale(s: &Self::Scalar, v: Self) -> Self {
             Quaternion::new(
@@ -81,11 +80,11 @@ batch_trait! {
             )
         }
     };
-    VectorSpace: @trait<@am> <T: Field<>> Quaternion<T> where Self::Scalar: Field<>;
+    VectorSpace: @trait<@am> <T: Field> Quaternion<T> where Self::Scalar: Field;
     FiniteDimInnerSpace: @trait<@am> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>;
     // Division ring inverse, the normed layer: structurally similar to the
     // complex versions, well under the 60-line reuse boundary.
-    DivisionRing: @trait<@am> <T: Field<> + Copy> Quaternion<T>{
+    DivisionRing: <T: Field + Copy> Quaternion<T>{
         fn inv(&self) -> Self {
             let conj = Quaternion::new(
                 *self.w(),
@@ -109,9 +108,9 @@ batch_trait! {
                 &conj,
                 &Quaternion::new(
                     inv_norm2,
-                    <T as Monoid<Additive>>::identity(),
-                    <T as Monoid<Additive>>::identity(),
-                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid>::identity(),
+                    <T as Monoid>::identity(),
+                    <T as Monoid>::identity(),
                 ),
             )
         }
@@ -174,10 +173,10 @@ impl<T: Ring<Additive, Multiplicative>> Magma<Multiplicative> for Quaternion<T> 
     fn combine(&self, rhs: &Self) -> Self {
         Quaternion::new(
             // w1w2 − x1x2 − y1y2 − z1z2
-            <T as Magma<Additive>>::combine(
+            <T as Magma>::combine(
                 &<T as Magma<Multiplicative>>::combine(self.w(), rhs.w()),
-                &<T as Group<Additive>>::inverse(&<T as Magma<Additive>>::combine(
-                    &<T as Magma<Additive>>::combine(
+                &<T as Group>::inverse(&<T as Magma>::combine(
+                    &<T as Magma>::combine(
                         &<T as Magma<Multiplicative>>::combine(self.x(), rhs.x()),
                         &<T as Magma<Multiplicative>>::combine(self.y(), rhs.y()),
                     ),
@@ -185,41 +184,41 @@ impl<T: Ring<Additive, Multiplicative>> Magma<Multiplicative> for Quaternion<T> 
                 )),
             ),
             // w1x2 + x1w2 + y1z2 − z1y2
-            <T as Magma<Additive>>::combine(
-                &<T as Magma<Additive>>::combine(
+            <T as Magma>::combine(
+                &<T as Magma>::combine(
                     &<T as Magma<Multiplicative>>::combine(self.w(), rhs.x()),
                     &<T as Magma<Multiplicative>>::combine(self.x(), rhs.w()),
                 ),
-                &<T as Magma<Additive>>::combine(
+                &<T as Magma>::combine(
                     &<T as Magma<Multiplicative>>::combine(self.y(), rhs.z()),
-                    &<T as Group<Additive>>::inverse(&<T as Magma<Multiplicative>>::combine(
+                    &<T as Group>::inverse(&<T as Magma<Multiplicative>>::combine(
                         self.z(),
                         rhs.y(),
                     )),
                 ),
             ),
             // w1y2 − x1z2 + y1w2 + z1x2
-            <T as Magma<Additive>>::combine(
-                &<T as Magma<Additive>>::combine(
+            <T as Magma>::combine(
+                &<T as Magma>::combine(
                     &<T as Magma<Multiplicative>>::combine(self.w(), rhs.y()),
-                    &<T as Group<Additive>>::inverse(&<T as Magma<Multiplicative>>::combine(
+                    &<T as Group>::inverse(&<T as Magma<Multiplicative>>::combine(
                         self.x(),
                         rhs.z(),
                     )),
                 ),
-                &<T as Magma<Additive>>::combine(
+                &<T as Magma>::combine(
                     &<T as Magma<Multiplicative>>::combine(self.y(), rhs.w()),
                     &<T as Magma<Multiplicative>>::combine(self.z(), rhs.x()),
                 ),
             ),
             // w1z2 + x1y2 − y1x2 + z1w2
-            <T as Magma<Additive>>::combine(
-                &<T as Magma<Additive>>::combine(
+            <T as Magma>::combine(
+                &<T as Magma>::combine(
                     &<T as Magma<Multiplicative>>::combine(self.w(), rhs.z()),
                     &<T as Magma<Multiplicative>>::combine(self.x(), rhs.y()),
                 ),
-                &<T as Magma<Additive>>::combine(
-                    &<T as Group<Additive>>::inverse(&<T as Magma<Multiplicative>>::combine(
+                &<T as Magma>::combine(
+                    &<T as Group>::inverse(&<T as Magma<Multiplicative>>::combine(
                         self.y(),
                         rhs.x(),
                     )),

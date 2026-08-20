@@ -24,7 +24,7 @@ use crate::tower::{
 batch_trait! {
     @ptr=[Box,Rc,Arc];
     @impl=<T:@trait<> >@ptr T;
-    Magma: @trait [<T: Clone> Vec<T>{
+    Magma: <T: Clone> Vec<T>{
         fn combine(&self, rhs: &Self) -> Self {
             let mut v = self.clone();
             v.extend(rhs.iter().cloned());
@@ -36,20 +36,20 @@ batch_trait! {
             s.push_str(rhs);
             s
         }
-    }],
+    },
         <Op: Operator> @trait<Op> @impl impl{Box<_>}{
         fn combine(&self, rhs: &Self) -> Self {
             Box::new((**self).combine(&**rhs))
         }
     };
-    Semigroup: @trait [<T: Clone> Vec<T>, String],
+    Semigroup: <T: Clone> Vec<T>, String,
         <Op: Operator> @trait<Op> @impl;
-    Monoid: @trait [<T: Clone> Vec<T>{
+    Monoid: <T: Clone> Vec<T>{
         fn identity() -> Self { Vec::new() }
     },
         String{
         fn identity() -> Self { String::new() }
-    }],
+    },
         <Op: Operator> @trait<Op> <T: Monoid<>> @ptr T impl{Box<_>}{
         fn identity() -> Self { Box::new(T::identity()) }
     };

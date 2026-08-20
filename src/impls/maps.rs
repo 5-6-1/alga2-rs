@@ -9,11 +9,10 @@ use batch_impl::batch_trait;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::hash::Hash;
 
-use crate::op::Additive;
 use crate::tower::{Magma, Monoid, Semigroup};
 
 batch_trait! {
-    Magma: @trait<Additive> <K: Clone>[
+    Magma: <K: Clone>[
         <V:Clone>{
             fn combine(&self, rhs: &Self) -> Self {
                 let mut m = self.clone();
@@ -29,11 +28,11 @@ batch_trait! {
             }
         }[<K:Eq+Hash>HashSet<K> ,<K:Ord>BTreeSet<K>]
     ];
-    Semigroup: @trait<Additive> <K:Clone> [
+    Semigroup: <K:Clone> [
         <V:Clone> [<K:Eq+Hash>HashMap<K,V>,<K:Ord>BTreeMap<K,V>],
         <K:Eq+Hash>HashSet<K>,<K:Ord>BTreeSet<K>,
     ];
-    Monoid: @trait<Additive> <K:Clone> [
+    Monoid: <K:Clone> [
         <V:Clone> [<K:Eq+Hash>HashMap<K,V>,<K:Ord>BTreeMap<K,V>] impl{T<_,_>},
         [<K:Eq+Hash>HashSet<K>,<K:Ord>BTreeSet<K>]impl{T<_>}
     ]{
@@ -46,6 +45,7 @@ batch_trait! {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::op::Additive;
     use crate::tower::{Magma, Monoid};
 
     fn add<T: Magma<Additive>>(a: T, b: T) -> T {

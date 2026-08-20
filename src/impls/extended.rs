@@ -17,24 +17,24 @@ batch_trait! {
     Power: @trait[<Additive>,<Multiplicative>] [@num,bool],
         @trait<Additive> (<@trait<>>,).1..=12,
         @trait<Multiplicative> (<@trait<>>,).1..=12;
-    BoundedLattice: @trait [@u*,@i*]{
+    BoundedLattice: [@u*,@i*]{
         fn top() -> Self { Self::MAX } fn bottom() -> Self { Self::MIN }
     },
-        @trait bool{
+        bool{
         fn top() -> Self { true } fn bottom() -> Self { false }
     },
-        @trait (<@trait>,).1..=12 impl{(A@..,)}{
+        (<@trait>,).1..=12 impl{(A@..,)}{
         fn top() -> Self { ( @(@A::top(),).. ) }
         fn bottom() -> Self { ( @(@A::bottom(),).. ) }
     };
     LieAlgebra: @trait<Additive> [@num,bool]{
-        fn bracket(&self, _other: &Self) -> Self {<Self as Monoid<Additive>>::identity() }
+        fn bracket(&self, _other: &Self) -> Self {<Self as Monoid>::identity() }
     };
     // Euclidean division: `quot_rem` is the same div_euclid/rem_euclid pair
     // for every family; only the norm representation differs (the `@u*` cast
     // vs the `@i*` unsigned-abs — a type reality, not a duplication).
-    EuclideanDomain: @trait<Additive, Multiplicative>
-        [[@u8..u64, usize]{
+    EuclideanDomain: @trait<Additive, Multiplicative>[
+        [@u8..u64, usize]{
         fn quot_rem(&self, divisor: &Self) -> (Self, Self) { (self.div_euclid(*divisor), self.rem_euclid(*divisor)) }
          fn euclidean_norm(&self) -> u128 { *self as u128 }
     },
