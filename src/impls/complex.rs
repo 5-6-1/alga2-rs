@@ -20,6 +20,7 @@ use crate::tower::{
 batch_trait! {
     @with_add=@trait<Additive> <T: @trait<>> Complex<T>;
     @with_mul=@trait<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
+    @am=Additive,Multiplicative;
     Magma: @with_add{
         fn combine(&self, rhs: &Self) -> Self {
             Complex::new(
@@ -28,19 +29,19 @@ batch_trait! {
             )
         }
     },
-        @with_mul{
+        @with_mul impl{@trait<>}{
         fn combine(&self, rhs: &Self) -> Self {
             Complex::new(
                 <T as Magma<Additive>>::combine(
-                    &<T as Magma<Multiplicative>>::combine(self.re(), rhs.re()),
-                    &<T as Group<Additive>>::inverse(&<T as Magma<Multiplicative>>::combine(
+                    &<T as Magma<>>::combine(self.re(), rhs.re()),
+                    &<T as Group<Additive>>::inverse(&<T as Magma<>>::combine(
                         self.im(),
                         rhs.im(),
                     )),
                 ),
                 <T as Magma<Additive>>::combine(
-                    &<T as Magma<Multiplicative>>::combine(self.re(), rhs.im()),
-                    &<T as Magma<Multiplicative>>::combine(self.im(), rhs.re()),
+                    &<T as Magma<>>::combine(self.re(), rhs.im()),
+                    &<T as Magma<>>::combine(self.im(), rhs.re()),
                 ),
             )
         }
@@ -49,9 +50,6 @@ batch_trait! {
         @with_mul;
     Monoid: [@with_add,@with_mul]impl{@trait<>}{
         fn identity() -> Self {
-            // Real part follows the spec's operator (`0` under Additive, `1`
-            // under Multiplicative); the imaginary part is the additive
-            // identity (zero) either way.
             Complex::new(<T as Monoid<>>::identity(), <T as Monoid<Additive>>::identity())
         }
     };
@@ -66,11 +64,11 @@ batch_trait! {
         }
     };
     AbelianGroup: @with_add;
-    Semiring: @trait<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
-    Ring: @trait<Additive, Multiplicative> <T: @trait<>> Complex<T>;
-    CommutativeRing: @trait<Additive, Multiplicative> <T: @trait<>> Complex<T>;
-    Field: @trait<Additive, Multiplicative> <T: @trait<>> Complex<T>;
-    Module: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>{
+    Semiring: @trait<@am> <T: Ring<>> Complex<T>;
+    Ring: @trait<@am> <T: @trait<>> Complex<T>;
+    CommutativeRing: @trait<@am> <T: @trait<>> Complex<T>;
+    Field: @trait<@am> <T: @trait<>> Complex<T>;
+    Module: @trait<@am> <T: Field<>> Complex<T>{
         type Scalar = T;
         fn scale(s: &Self::Scalar, v: Self) -> Self {
             Complex::new(
@@ -79,17 +77,17 @@ batch_trait! {
             )
         }
     };
-    VectorSpace: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>
-        where{Self::Scalar: Field<Additive, Multiplicative>};
+    VectorSpace: @trait<@am> <T: Field<>> Complex<T>
+        where{Self::Scalar: Field<@am>};
     // All bodies are under the 40-line hand-written boundary (the division
     // ring inverse, the complex-field accessors, the degree-2 extension).
-    DivisionRing: @trait<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Complex<T>{
+    DivisionRing: @trait<@am> <T: Field<>> Complex<T> impl{@trait<>}{
         fn inv(&self) -> Self {
             let d = <T as Magma<Additive>>::combine(
                 &<T as Magma<Multiplicative>>::combine(self.re(), self.re()),
                 &<T as Magma<Multiplicative>>::combine(self.im(), self.im()),
             );
-            let inv_d = <T as DivisionRing<Additive, Multiplicative>>::inv(&d);
+            let inv_d = <T as DivisionRing<>>::inv(&d);
             Complex::new(
                 <T as Magma<Multiplicative>>::combine(self.re(), &inv_d),
                 <T as Magma<Multiplicative>>::combine(
@@ -110,7 +108,7 @@ batch_trait! {
             Complex::new(*self.re(), <T as Group<Additive>>::inverse(self.im()))
         }
     };
-    FieldExtension: @trait<Additive, Multiplicative> <T: Real + Copy> Complex<T>{
+    FieldExtension: @trait<@am> <T: Real + Copy> Complex<T>{
         type BaseField = T;
         fn degree() -> usize { 2 }
         fn trace(&self) -> Self::BaseField {

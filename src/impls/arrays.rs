@@ -39,9 +39,10 @@ impl<C: Ring<Additive, Multiplicative> + PartialEq + Clone, const N: usize> Poly
 
 batch_trait! {
     @with=@trait[<Additive>,<Multiplicative>] <T: @trait<>, const N: usize> [T; N];
-    @with_add=@trait<Additive> <T: @trait<Additive>, const N: usize> [T; N];
+    @with_add=@trait<Additive> <T: @trait<>, const N: usize> [T; N];
     @with2=@trait<Additive,Multiplicative> <T: @trait<>, const N: usize> [T; N];
     @with_impl=@with impl{@trait<>};
+    @with2_impl=@with2 impl{@trait<>};
     Magma: @with_impl{
         fn combine(&self, rhs: &Self) -> Self {
             core::array::from_fn(|i| <T as Magma<> >::combine(&self[i], &rhs[i]))
@@ -55,23 +56,23 @@ batch_trait! {
     Loop: @with;
     Group: @with_add{
         fn inverse(&self) -> Self {
-            core::array::from_fn(|i| <T as Group<Additive>>::inverse(&self[i]))
+            core::array::from_fn(|i| <T as Group<>>::inverse(&self[i]))
         }
     };
     AbelianGroup: @with_add;
     Semiring: @with2;
     Ring: @with2;
     CommutativeRing: @with2;
-    Module: @with2 where T:Copy{
-        type Scalar = <T as Module<Additive, Multiplicative>>::Scalar;
+    Module: @with2_impl where T:Copy{
+        type Scalar = <T as Module<>>::Scalar;
         fn scale(s: &Self::Scalar, v: Self) -> Self {
-            core::array::from_fn(|i| <T as Module<Additive, Multiplicative>>::scale(s, v[i]))
+            core::array::from_fn(|i| <T as Module<>>::scale(s, v[i]))
         }
     };
-    VectorSpace: @with2 where T:Copy, Self::Scalar: Field<Additive, Multiplicative>;
+    VectorSpace: @with2 where T:Copy, Self::Scalar: Field<>;
     // `[T; N]` is the free module R^N when the components are scalars
     // (`T` itself a monoid under both operators — the numerics, `ModN`).
-    FreeModule: @with2 where T:Monoid<Additive> + Monoid<Multiplicative> + Copy{
+    FreeModule: @with2_impl where T:Monoid<Additive> + Monoid<Multiplicative> + Copy{
         fn rank() -> usize { N } fn basis_element(_i: usize) -> Self {
             core::array::from_fn(|i| if i == _i {
                 <T as Monoid<Multiplicative>>::identity()
@@ -80,7 +81,7 @@ batch_trait! {
             })
         }
         fn coordinate(&self, i: usize) -> Self::Scalar {
-            <T as FreeModule<Additive, Multiplicative>>::coordinate(&self[i], 0)
+            <T as FreeModule<>>::coordinate(&self[i], 0)
         }
     };
 }

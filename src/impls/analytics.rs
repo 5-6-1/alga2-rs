@@ -116,8 +116,7 @@ batch_trait! {
         fn dimension() -> usize { 1 }
         fn canonical_basis_element(_i: usize) -> Self { 1. }
         fn dot(&self, other: &Self) -> Self { *self * *other }
-    },
-         <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T>{
+    },  <T: Real + ClosedAdd + ClosedMul + Copy> Complex<T>{
         fn dimension() -> usize { 2 }
         fn canonical_basis_element(_i: usize) -> Self {
             if _i == 0 {

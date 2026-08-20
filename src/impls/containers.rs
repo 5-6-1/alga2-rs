@@ -24,30 +24,48 @@ use crate::tower::{
 batch_trait! {
     @ptr=[Box,Rc,Arc];
     @impl=<T:@trait<> >@ptr T;
-    Magma: Magma<Additive> <T: Clone> Vec<T>
-        {fn combine(&self, rhs: &Self) -> Self { let mut v = self.clone(); v.extend(rhs.iter().cloned()); v }},
-        Magma<Additive> String
-        {fn combine(&self, rhs: &Self) -> Self { let mut s = self.clone(); s.push_str(rhs); s }},
-        <Op: Operator> Magma<Op> <T: Magma<Op>> [Box,Rc,Arc] T impl{Box<T>}
-        {fn combine(&self, rhs: &Self) -> Self { Box::new((**self).combine(&**rhs)) }};
-    Semigroup: Semigroup<Additive> <T: Clone> Vec<T>,
-        Semigroup<Additive> String,
-        <Op: Operator> Semigroup<Op> @impl;
-    Monoid: Monoid<Additive> <T: Clone> Vec<T>
-        {fn identity() -> Self { Vec::new() }},
-        Monoid<Additive> String
-        {fn identity() -> Self { String::new() }},
-        <Op: Operator> Monoid<Op> <T: Monoid<Op>> [Box,Rc,Arc] T impl{Box<T>}
-        {fn identity() -> Self { Box::new(T::identity()) }};
-    Quasigroup: <Op: Operator> Quasigroup<Op> @impl;
-    Loop: <Op: Operator> Loop<Op> @impl;
-    Group: <Op: Operator> Group<Op> @impl impl{Box<T>} {fn inverse(&self) -> Self { Box::new((**self).inverse()) }};
-    AbelianGroup: <Op: Operator> AbelianGroup<Op> @impl;
-    Semiring: <Oa: Operator, Om: Operator> Semiring<Oa, Om> @impl;
-    Ring: <Oa: Operator, Om: Operator> Ring<Oa, Om> @impl;
-    CommutativeRing: <Oa: Operator, Om: Operator> CommutativeRing<Oa, Om> @impl;
-    Field: <Oa: Operator, Om: Operator> Field<Oa, Om> @impl;
-    DivisionRing: <Oa: Operator, Om: Operator> DivisionRing<Oa, Om> @impl impl{Box<T>} {fn inv(&self) -> Self { Box::new((**self).inv()) }},;
+    Magma: @trait<Additive> [<T: Clone> Vec<T>{
+        fn combine(&self, rhs: &Self) -> Self {
+            let mut v = self.clone();
+            v.extend(rhs.iter().cloned());
+            v
+        }
+    }, String{
+        fn combine(&self, rhs: &Self) -> Self {
+            let mut s = self.clone();
+            s.push_str(rhs);
+            s
+        }
+    }],
+        <Op: Operator> @trait<Op> @impl impl{Box<_>}{
+        fn combine(&self, rhs: &Self) -> Self {
+            Box::new((**self).combine(&**rhs))
+        }
+    };
+    Semigroup: @trait<Additive> [<T: Clone> Vec<T>, String],
+        <Op: Operator> @trait<Op> @impl;
+    Monoid: @trait<Additive> [<T: Clone> Vec<T>{
+        fn identity() -> Self { Vec::new() }
+    },
+        String{
+        fn identity() -> Self { String::new() }
+    }],
+        <Op: Operator> @trait<Op> <T: Monoid<>> @ptr T impl{Box<_>}{
+        fn identity() -> Self { Box::new(T::identity()) }
+    };
+    Quasigroup: <Op: Operator> @trait<Op> @impl;
+    Loop: <Op: Operator> @trait<Op> @impl;
+    Group: <Op: Operator> @trait<Op> @impl impl{Box<_>} {
+        fn inverse(&self) -> Self { Box::new((**self).inverse()) }
+    };
+    AbelianGroup: <Op: Operator> @trait<Op> @impl;
+    Semiring: <Oa: Operator, Om: Operator> @trait<Oa, Om> @impl;
+    Ring: <Oa: Operator, Om: Operator> @trait<Oa, Om> @impl;
+    CommutativeRing: <Oa: Operator, Om: Operator> @trait<Oa, Om> @impl;
+    Field: <Oa: Operator, Om: Operator> @trait<Oa, Om> @impl;
+    DivisionRing: <Oa: Operator, Om: Operator> @trait<Oa, Om> @impl impl{Box<_>} {
+        fn inv(&self) -> Self { Box::new((**self).inv()) }
+    };
 }
 
 #[cfg(test)]
