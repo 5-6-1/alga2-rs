@@ -27,20 +27,16 @@ use crate::tower::{
 };
 
 #[batch_impl_only(
-    [
-        Magma<Additive>,
-        Magma<Multiplicative>
-    ] (<@trait<> >,).1..=16 impl{(A@..,)}#combine{( @(@A::combine(&self.@0, &rhs.@0),).. )},
+    @trait[<Additive>,<Multiplicative>]
+    (<@trait<>>,).1..=16 impl{(A@..,)} #combine{( @(@A::combine(&self.@0, &rhs.@0),).. )},
 )]
 trait Magma<Op: Operator> {
     fn combine(&self, rhs: &Self) -> Self;
 }
 
 #[batch_impl_only(
-    [
-        Monoid<Additive>,
-        Monoid<Multiplicative>
-    ] (<@trait<> >,).1..=16 impl{(A@..,)} #identity{( @(@A::identity(),).. )},
+    @trait[<Additive>,<Multiplicative>]
+    (<@trait<> >,).1..=16 impl{(A@..,)} #identity{( @(@A::identity(),).. )},
 )]
 trait Monoid<Op: Operator>: Semigroup<Op> {
     fn identity() -> Self;
@@ -51,7 +47,7 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
 // additive-only too (`(R, ·)` is not a quasigroup: zero absorbs).
 
 #[batch_impl_only(
-    Group<Additive> (<@trait<> >,).1..=16 impl{(A@..,)} #inverse{( @(@A::inverse(&self.@0),).. )},
+    @trait (<@trait<>>,).1..=16 impl{(A@..,)} #inverse{( @(@A::inverse(&self.@0),).. )},
 )]
 trait Group<Op: Operator>: Loop<Op> {
     fn inverse(&self) -> Self;
@@ -63,9 +59,9 @@ trait Group<Op: Operator>: Loop<Op> {
 // scalar. Empty for arity 1 (no predicate, no error).
 
 #[batch_impl_only(
-    Module<Additive, Multiplicative> (<@trait<> >,).1..=16 where{
-        @1..: Module<Additive, Multiplicative, Scalar = @0::Scalar>,
-    } impl{(A@..,)} #Scalar{A0::Scalar} #scale{( @(@A::scale(&s, v.@0),).. )},
+    @trait<Additive, Multiplicative> (<@trait<>>,).1..=16 where
+        @1..: @trait<Additive, Multiplicative, Scalar = @0::Scalar>,
+    impl{(A@..,)} #Scalar{A0::Scalar} #scale{( @(@A::scale(&s, v.@0),).. )},
 )]
 trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
     type Scalar;
@@ -77,19 +73,20 @@ trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
 
 batch_trait! {
     @tr_tup_to=(<@trait<> >,).1..=;
-    Semigroup: [Semigroup<Additive>, Semigroup<Multiplicative> ] @tr_tup_to 16;
-    Quasigroup: Quasigroup<Additive> @tr_tup_to 16;
-    Loop: Loop<Additive> @tr_tup_to 16;
-    AbelianGroup: AbelianGroup<Additive> @tr_tup_to 16;
-    Semiring: Semiring<Additive, Multiplicative> @tr_tup_to 16;
-    Ring: Ring<Additive, Multiplicative> @tr_tup_to 16;
-    CommutativeRing: CommutativeRing<Additive, Multiplicative> @tr_tup_to 16;
-    VectorSpace: VectorSpace<Additive, Multiplicative> @tr_tup_to 16 where{
-        @1..: VectorSpace<Additive, Multiplicative,Scalar = @0::Scalar>,
-        Self::Scalar: Field<Additive, Multiplicative>,
-    };
+    @am=Additive, Multiplicative;
+    Semigroup: @trait[<Additive>, <Multiplicative>] @tr_tup_to 16;
+    Quasigroup: @trait @tr_tup_to 16;
+    Loop: @trait @tr_tup_to 16;
+    AbelianGroup: @trait @tr_tup_to 16;
+    Semiring: @trait<@am> @tr_tup_to 16;
+    Ring: @trait<@am> @tr_tup_to 16;
+    CommutativeRing: @trait<@am> @tr_tup_to 16;
+    VectorSpace: @trait<@am> @tr_tup_to 16 where
+        @1..: @trait<@am,Scalar = @0::Scalar>,
+        Self::Scalar: Field<@am>,
+    ;
     Lattice: @tr_tup_to 12;
-    FiniteDimInnerSpace: FiniteDimInnerSpace<Additive, Multiplicative> (f64,).1..=16;
+    FiniteDimInnerSpace: @trait<@am> (f64,).1..=16;
 }
 
 // ---- analytic layer: componentwise lattices, norms, finite dimension ----
@@ -119,10 +116,10 @@ trait JoinSemilattice: Sized + PartialOrd {
 // equality chains) — the euclidean metric.
 
 #[batch_impl_only(
-    NormedSpace<Additive, Multiplicative> (f64,).1..=16 impl{(A@..,)}
+    @trait<Additive, Multiplicative> (f64,).1..=16 impl{(A@..,)} impl{@trait<>}
         #RealField{f64}
         #norm_squared{@(self.@0 * self.@0+)..0.}
-    #scale_real{(@(<f64 as Module<Additive, Multiplicative>>::scale(&r, self.@0),)..)},
+    #scale_real{(@(<f64 as Module<>>::scale(&r, self.@0),)..)},
 )]
 trait NormedSpace<Oa: Operator, Om: Operator>: VectorSpace<Oa, Om> {
     type RealField;
@@ -131,7 +128,7 @@ trait NormedSpace<Oa: Operator, Om: Operator>: VectorSpace<Oa, Om> {
 }
 
 #[batch_impl_only(
-    InnerSpace<Additive, Multiplicative> (f64,).1..=16 impl{(A@..,)}
+    @trait<Additive, Multiplicative> (f64,).1..=16 impl{(A@..,)}
         #inner_product{@(self.@0 * other.@0+)..0.},
 )]
 trait InnerSpace<Oa: Operator, Om: Operator>: NormedSpace<Oa, Om> {
@@ -139,7 +136,7 @@ trait InnerSpace<Oa: Operator, Om: Operator>: NormedSpace<Oa, Om> {
 }
 
 #[batch_impl_only(
-    FiniteDimVectorSpace<Additive, Multiplicative> (f64,).1..=16 impl{(A@..,)}
+    @trait<Additive, Multiplicative> (f64,).1..=16 impl{(A@..,)}
         #dimension{@(1+)..0}
         #canonical_basis_element{( @(if _i == @0 { 1.0 } else { 0.0 },).. )}
         #dot{@(self.@0 * other.@0+)..0.},
@@ -153,7 +150,7 @@ trait FiniteDimVectorSpace<Oa: Operator, Om: Operator>: VectorSpace<Oa, Om> {
 // `(f64, ..., f64)` is the free module R^n: rank n, standard basis.
 
 #[batch_impl_only(
-    FreeModule<Additive, Multiplicative> (f64,).1..=16 impl{(A@..,)}
+    @trait<Additive, Multiplicative> (f64,).1..=16 impl{(A@..,)}
         #rank{@(1+)..0}
         #basis_element{( @(if _i == @0 { 1.0 } else { 0.0 },).. )}
         #coordinate{match i { @( @0 => self.@0, ).. _ => unreachable!() }},

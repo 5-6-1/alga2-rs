@@ -11,7 +11,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use batch_impl::batch_trait;
 
-use crate::op::{Additive, Operator};
+use crate::op::Operator;
 use crate::tower::{
     AbelianGroup, CommutativeRing, DivisionRing, Field, Group, Loop, Magma, Monoid, Quasigroup,
     Ring, Semigroup, Semiring,
@@ -24,7 +24,7 @@ use crate::tower::{
 batch_trait! {
     @ptr=[Box,Rc,Arc];
     @impl=<T:@trait<> >@ptr T;
-    Magma: @trait<Additive> [<T: Clone> Vec<T>{
+    Magma: @trait [<T: Clone> Vec<T>{
         fn combine(&self, rhs: &Self) -> Self {
             let mut v = self.clone();
             v.extend(rhs.iter().cloned());
@@ -42,9 +42,9 @@ batch_trait! {
             Box::new((**self).combine(&**rhs))
         }
     };
-    Semigroup: @trait<Additive> [<T: Clone> Vec<T>, String],
+    Semigroup: @trait [<T: Clone> Vec<T>, String],
         <Op: Operator> @trait<Op> @impl;
-    Monoid: @trait<Additive> [<T: Clone> Vec<T>{
+    Monoid: @trait [<T: Clone> Vec<T>{
         fn identity() -> Self { Vec::new() }
     },
         String{
@@ -71,6 +71,7 @@ batch_trait! {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::op::Additive;
     use crate::op::Multiplicative;
     use crate::tower::{Magma, Monoid};
     use alloc::vec;

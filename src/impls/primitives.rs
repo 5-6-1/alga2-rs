@@ -29,69 +29,80 @@ use crate::tower::{
 
 batch_trait! {
     @int=[@u*,@i*];
-    Magma: @trait<Additive> [@int{
-        fn combine(&self, rhs: &Self) -> Self { self.wrapping_add(*rhs) }
-    }, @f*{
-        fn combine(&self, rhs: &Self) -> Self { *self + *rhs }
-    }, bool{
-        fn combine(&self, rhs: &Self) -> Self { *self != *rhs }
-    }],
-        @trait<Multiplicative> [@int{
+    @pri=[@num, bool];
+    @tr_add=@trait;
+    @tr_mul=@trait<Multiplicative>;
+    @tr_am=@trait<Additive,Multiplicative>;
+    Magma: @tr_add [
+        @int{
+            fn combine(&self, rhs: &Self) -> Self { self.wrapping_add(*rhs) }
+        }, @f*{
+            fn combine(&self, rhs: &Self) -> Self { *self + *rhs }
+        }, bool{
+            fn combine(&self, rhs: &Self) -> Self { *self != *rhs }
+        }],
+        @tr_mul [@int{
             fn combine(&self, rhs: &Self) -> Self { self.wrapping_mul(*rhs) }
         }, @f*{
             fn combine(&self, rhs: &Self) -> Self { *self * *rhs }
         }, bool{
             fn combine(&self, rhs: &Self) -> Self { *self && *rhs }
         }];
-    Monoid: @trait<Additive> [@int{
-        fn identity() -> Self { 0 }
-    }, @f*{
-        fn identity() -> Self { 0. }
-    }, bool{
-        fn identity() -> Self { false }
-    }],
-        @trait<Multiplicative> [@int{
+    Monoid: @tr_add [
+        @int{
+            fn identity() -> Self { 0 }
+        }, @f*{
+            fn identity() -> Self { 0. }
+        }, bool{
+            fn identity() -> Self { false }
+        }],
+        @tr_mul [
+        @int{
             fn identity() -> Self { 1 }
         }, @f*{
             fn identity() -> Self { 1. }
         }, bool{
             fn identity() -> Self { true }
         }];
-    Group: @trait<Additive> [@int{
+    Group: @tr_add [@int{
         fn inverse(&self) -> Self { self.wrapping_neg() }
     }, @f*{
         fn inverse(&self) -> Self { -*self }
     }, bool{
         fn inverse(&self) -> Self { *self }
     }];
-    DivisionRing: @trait<Additive, Multiplicative> [@f*{
+    DivisionRing: @tr_am [@f*{
         fn inv(&self) -> Self { 1.0 / *self }
     }, bool{
         fn inv(&self) -> Self { *self }
     }];
-    Semigroup: [Semigroup<Additive>,Semigroup<Multiplicative>] [@num,bool];
-    Quasigroup: Quasigroup<Additive> [@num, bool];
-    Loop: Loop<Additive> [@num, bool];
-    AbelianGroup: AbelianGroup<Additive> [@num, bool];
-    Semiring: Semiring<Additive, Multiplicative> [@num, bool];
-    Ring: Ring<Additive, Multiplicative> [@num,bool];
-    CommutativeRing: CommutativeRing<Additive, Multiplicative> [@num,bool];
-    Field: Field<Additive, Multiplicative> [@f*, bool];
-    FiniteField: FiniteField<Additive, Multiplicative> bool
-        {fn characteristic() -> u64 { 2 } fn order() -> u64 { 2 }};
-    VectorSpace: VectorSpace<Additive, Multiplicative> [@f*,bool] where{Self::Scalar: Field<Additive, Multiplicative>};
-    FreeModule: FreeModule<Additive, Multiplicative> [@num, bool]
-        {fn rank() -> usize { 1 } fn basis_element(_i: usize) -> Self { <Self as Monoid<Multiplicative>>::identity() } fn coordinate(&self, _i: usize) -> Self::Scalar { *self }};
-    Module: @trait<Additive, Multiplicative> [@int{
-        type Scalar = Self;
-        fn scale(s: &Self::Scalar, v: Self) -> Self { s.wrapping_mul(v) }
-    }, @f*{
-        type Scalar = Self;
-        fn scale(s: &Self::Scalar, v: Self) -> Self { s * v }
-    }, bool{
-        type Scalar = Self;
-        fn scale(s: &Self::Scalar, v: Self) -> Self { *s && v }
-    }];
+    Semigroup: @trait[<Additive>,<Multiplicative>] @pri;
+    Quasigroup: @tr_add @pri;
+    Loop: @tr_add @pri;
+    AbelianGroup: @tr_add @pri;
+    Semiring: @tr_am @pri;
+    Ring: @tr_am @pri;
+    CommutativeRing: @tr_am @pri;
+    Field: @tr_am [@f*, bool];
+    FiniteField: @tr_am bool{
+        fn characteristic() -> u64 { 2 }
+        fn order() -> u64 { 2 }
+    };
+    VectorSpace: @tr_am [@f*,bool] where Self::Scalar: Field<>;
+    FreeModule: @tr_am @pri{
+        fn rank() -> usize { 1 }
+        fn basis_element(_i: usize) -> Self { <Self as Monoid<Multiplicative>>::identity() }
+        fn coordinate(&self, _i: usize) -> Self::Scalar { *self }
+    };
+    Module: @trait<Additive, Multiplicative,Scalar=Self> [
+        @int{
+            fn scale(s: &Self::Scalar, v: Self) -> Self { s.wrapping_mul(v) }
+        }, @f*{
+            fn scale(s: &Self::Scalar, v: Self) -> Self { s * v }
+        }, bool{
+            fn scale(s: &Self::Scalar, v: Self) -> Self { *s && v }
+        }
+    ];
 }
 
 #[cfg(test)]

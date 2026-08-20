@@ -18,39 +18,54 @@ use crate::tower::{
 
 batch_trait! {
     @am=Additive, Multiplicative;
-    Magma: @trait<Additive> <const P: usize> ModN<P>
-        {fn combine(&self, rhs: &Self) -> Self { ModN::new(self.value().wrapping_add(rhs.value())) }},
-        @trait<Multiplicative> <const P: usize> ModN<P>
-        {fn combine(&self, rhs: &Self) -> Self { ModN::new(self.value().wrapping_mul(rhs.value())) }};
-    Semigroup: @trait<Additive> <const P: usize> ModN<P>,
-        @trait<Multiplicative> <const P: usize> ModN<P>;
-    Monoid: @trait<Additive> <const P: usize> ModN<P> {fn identity() -> Self { ModN::new(0) }},
-        @trait<Multiplicative> <const P: usize> ModN<P> {fn identity() -> Self { ModN::new(1) }};
-    Quasigroup: @trait<Additive> <const P: usize> ModN<P>;
-    Loop: @trait<Additive> <const P: usize> ModN<P>;
-    Group: @trait<Additive> <const P: usize> ModN<P>
-        {fn inverse(&self) -> Self { ModN::new(P.wrapping_sub(self.value()).wrapping_rem(P)) }};
-    AbelianGroup: @trait<Additive> <const P: usize> ModN<P>;
-    Semiring: @trait<@am> <const P: usize> ModN<P>;
-    Ring: @trait<@am> <const P: usize> ModN<P>;
-    CommutativeRing: @trait<@am> <const P: usize> ModN<P>;
-    Field: @trait<@am> <const P: usize> ModN<P>;
-    FiniteField: @trait<@am> <const P: usize> ModN<P>
-        {fn characteristic() -> u64 { P as u64 } fn order() -> u64 { P as u64 }};
-    IntegralDomain: @trait<@am> <const P: usize> ModN<P>;
-    UniqueFactorizationDomain: @trait<@am> <const P: usize> ModN<P>;
-    PrincipalIdealDomain: @trait<@am> <const P: usize> ModN<P>;
-    Module: @trait<@am> <const P: usize> ModN<P>
-        {type Scalar = Self; fn scale(s: &Self::Scalar, v: Self) -> Self { ModN::new(s.value().wrapping_mul(v.value())) }};
-    VectorSpace: @trait<@am> <const P: usize> ModN<P>
-        where{Self::Scalar: Field<@am>};
-    FreeModule: @trait<@am> <const P: usize> ModN<P>
-        {fn rank() -> usize { 1 } fn basis_element(_i: usize) -> Self { <Self as Monoid<Multiplicative>>::identity() } fn coordinate(&self, _i: usize) -> Self::Scalar { *self }};
+    @pmod=<const P: usize> ModN<P>;
+    Magma: @trait[
+        <Additive>{
+            fn combine(&self, rhs: &Self) -> Self { ModN::new(self.value().wrapping_add(rhs.value())) }
+        },
+        <Multiplicative>{
+            fn combine(&self, rhs: &Self) -> Self { ModN::new(self.value().wrapping_mul(rhs.value())) }
+        }]@pmod;
+    Semigroup: @trait[<Additive>,<Multiplicative>] @pmod;
+    Monoid: @trait[
+        <Additive> {
+            fn identity() -> Self { ModN::new(0) }
+        },
+        <Multiplicative> {
+            fn identity() -> Self { ModN::new(1) }
+        }]@pmod;
+    Quasigroup: @trait<Additive> @pmod;
+    Loop: @trait<Additive> @pmod;
+    Group: @trait<Additive> @pmod{
+        fn inverse(&self) -> Self { ModN::new(P.wrapping_sub(self.value()).wrapping_rem(P)) }
+    };
+    AbelianGroup: @trait<Additive> @pmod;
+    Semiring: @trait<@am> @pmod;
+    Ring: @trait<@am> @pmod;
+    CommutativeRing: @trait<@am> @pmod;
+    Field: @trait<@am> @pmod;
+    FiniteField: @trait<@am> @pmod{
+        fn characteristic() -> u64 { P as u64 }
+        fn order() -> u64 { P as u64 }
+    };
+    IntegralDomain: @trait<@am> @pmod;
+    UniqueFactorizationDomain: @trait<@am> @pmod;
+    PrincipalIdealDomain: @trait<@am> @pmod;
+    Module: @trait<@am,Scalar=Self> @pmod{
+        fn scale(s: &Self::Scalar, v: Self) -> Self { ModN::new(s.value().wrapping_mul(v.value())) }
+    };
+    VectorSpace: @trait<@am> @pmod
+        where Self::Scalar: Field<@am>;
+    FreeModule: @trait<@am> @pmod{
+        fn rank() -> usize { 1 }
+        fn basis_element(_i: usize) -> Self { <Self as Monoid<Multiplicative>>::identity() }
+        fn coordinate(&self, _i: usize) -> Self::Scalar { *self }
+    };
     // The multiplicative inverse: extended euclid on `(self.value(), P)` —
     // exact when `P` is prime (the residue is then coprime to `P`); for
     // composite `P` a non-invertible residue yields a meaningless
     // coefficient, so `Field` is documented as "for prime `P`".
-    DivisionRing: @trait<@am> <const P: usize> ModN<P> impl{@trait<>}{
+    DivisionRing: @trait<@am> @pmod{
         fn inv(&self) -> Self {
             // Extended euclid; Bézout coefficients may go negative, so they
             // run in i128 and reduce via rem_euclid.
@@ -67,7 +82,7 @@ batch_trait! {
     };
     // Division by the modular inverse, remainder 0 (a field has trivial
     // euclidean division).
-    EuclideanDomain: @trait<@am> <const P: usize> ModN<P> impl{@trait<>}{
+    EuclideanDomain: @trait<@am> @pmod impl{@trait<>}{
         fn quot_rem(&self, divisor: &Self) -> (Self, Self) {
             let inv = <Self as DivisionRing<>>::inv(divisor);
             (<Self as Magma<Multiplicative>>::combine(self, &inv), ModN::new(0))

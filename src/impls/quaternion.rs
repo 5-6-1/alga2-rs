@@ -21,54 +21,56 @@ use crate::tower::{
 
 batch_trait! {
     @am=Additive, Multiplicative;
-    Magma: @trait<Additive> <T: @trait<>> Quaternion<T>{
+    @tr_add=@trait<Additive> <T: @trait<>> Quaternion<T>;
+    @tr_mul=@trait<Multiplicative> <T: Ring<@am>> Quaternion<T>;
+    @tr_am=@trait<@am> <T: Ring<>> Quaternion<T>;
+    Magma: @tr_add{
         fn combine(&self, rhs: &Self) -> Self {
             Quaternion::new(
-                <T as Magma<>>::combine(self.w(), rhs.w()),
-                <T as Magma<>>::combine(self.x(), rhs.x()),
-                <T as Magma<>>::combine(self.y(), rhs.y()),
-                <T as Magma<>>::combine(self.z(), rhs.z()),
+                <T as Magma>::combine(self.w(), rhs.w()),
+                <T as Magma>::combine(self.x(), rhs.x()),
+                <T as Magma>::combine(self.y(), rhs.y()),
+                <T as Magma>::combine(self.z(), rhs.z()),
             )
         }
     };
-    Semigroup: @trait<Additive> <T: @trait<>> Quaternion<T>,
-        @trait<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
-    Monoid: @trait<Additive> <T: @trait<>> Quaternion<T>{
+    Semigroup: @tr_add,@tr_mul;
+    Monoid: @tr_add{
         fn identity() -> Self {
             Quaternion::new(
-                <T as Monoid<>>::identity(),
-                <T as Monoid<>>::identity(),
-                <T as Monoid<>>::identity(),
-                <T as Monoid<>>::identity(),
+                <T as Monoid>::identity(),
+                <T as Monoid>::identity(),
+                <T as Monoid>::identity(),
+                <T as Monoid>::identity(),
             )
         }
     },
-        @trait<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T>{
+        @tr_mul{
         fn identity() -> Self {
             Quaternion::new(
                 <T as Monoid<Multiplicative>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Additive>>::identity(),
-                <T as Monoid<Additive>>::identity(),
+                <T as Monoid>::identity(),
+                <T as Monoid>::identity(),
+                <T as Monoid>::identity(),
             )
         }
     };
-    Quasigroup: @trait<Additive> <T: @trait<>> Quaternion<T>;
-    Loop: @trait<Additive> <T: @trait<>> Quaternion<T>;
-    Group: @trait<Additive> <T: @trait<>> Quaternion<T>{
+    Quasigroup: @tr_add;
+    Loop: @tr_add;
+    Group: @tr_add{
         fn inverse(&self) -> Self {
             Quaternion::new(
-                <T as Group<>>::inverse(self.w()),
-                <T as Group<>>::inverse(self.x()),
-                <T as Group<>>::inverse(self.y()),
-                <T as Group<>>::inverse(self.z()),
+                <T as Group>::inverse(self.w()),
+                <T as Group>::inverse(self.x()),
+                <T as Group>::inverse(self.y()),
+                <T as Group>::inverse(self.z()),
             )
         }
     };
-    AbelianGroup: @trait<Additive> <T: @trait<>> Quaternion<T>;
-    Semiring: @trait<@am> <T: Ring<Additive, Multiplicative>> Quaternion<T>;
+    AbelianGroup: @tr_add;
+    Semiring: @tr_am;
     Ring: @trait<@am> <T: @trait<>> Quaternion<T>;
-    Module: @trait<@am> <T: Field<Additive, Multiplicative>> Quaternion<T>{
+    Module: @trait<@am> <T: Field<>> Quaternion<T>{
         type Scalar = T;
         fn scale(s: &Self::Scalar, v: Self) -> Self {
             Quaternion::new(
@@ -79,30 +81,29 @@ batch_trait! {
             )
         }
     };
-    VectorSpace: @trait<@am> <T: Field<Additive, Multiplicative>> Quaternion<T>
-        where{Self::Scalar: Field<Additive, Multiplicative>};
+    VectorSpace: @trait<@am> <T: Field<>> Quaternion<T> where Self::Scalar: Field<>;
     FiniteDimInnerSpace: @trait<@am> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>;
     // Division ring inverse, the normed layer: structurally similar to the
     // complex versions, well under the 60-line reuse boundary.
-    DivisionRing: @trait<@am> <T: Field<Additive, Multiplicative> + Copy> Quaternion<T>{
+    DivisionRing: @trait<@am> <T: Field<> + Copy> Quaternion<T>{
         fn inv(&self) -> Self {
             let conj = Quaternion::new(
                 *self.w(),
-                <T as Group<Additive>>::inverse(self.x()),
-                <T as Group<Additive>>::inverse(self.y()),
-                <T as Group<Additive>>::inverse(self.z()),
+                <T as Group>::inverse(self.x()),
+                <T as Group>::inverse(self.y()),
+                <T as Group>::inverse(self.z()),
             );
-            let norm2 = <T as Magma<Additive>>::combine(
-                &<T as Magma<Additive>>::combine(
+            let norm2 = <T as Magma>::combine(
+                &<T as Magma>::combine(
                     &<T as Magma<Multiplicative>>::combine(self.w(), self.w()),
                     &<T as Magma<Multiplicative>>::combine(self.x(), self.x()),
                 ),
-                &<T as Magma<Additive>>::combine(
+                &<T as Magma>::combine(
                     &<T as Magma<Multiplicative>>::combine(self.y(), self.y()),
                     &<T as Magma<Multiplicative>>::combine(self.z(), self.z()),
                 ),
             );
-            let inv_norm2 = <T as DivisionRing<Additive, Multiplicative>>::inv(&norm2);
+            let inv_norm2 = <T as DivisionRing<>>::inv(&norm2);
             // q⁻¹ = conj(q) / ‖q‖²
             <Quaternion<T> as Magma<Multiplicative>>::combine(
                 &conj,
@@ -115,8 +116,7 @@ batch_trait! {
             )
         }
     };
-    NormedSpace: @trait<@am> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
-        type RealField = T;
+    NormedSpace: @trait<@am,RealField = T> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>{
         fn norm_squared(&self) -> Self::RealField {
             *self.w() * *self.w()
                 + *self.x() * *self.x()
@@ -139,10 +139,26 @@ batch_trait! {
         fn dimension() -> usize { 4 }
         fn canonical_basis_element(_i: usize) -> Self {
             match _i {
-                0 => Quaternion::new(<T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity()),
-                1 => Quaternion::new(<T as Monoid<Additive>>::identity(), <T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity()),
-                2 => Quaternion::new(<T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity()),
-                3 => Quaternion::new(<T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Multiplicative>>::identity()),
+                0 => Quaternion::new(
+                    <T as Monoid<Multiplicative>>::identity(),
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Additive>>::identity()),
+                1 => Quaternion::new(
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Multiplicative>>::identity(),
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Additive>>::identity()),
+                2 => Quaternion::new(
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Multiplicative>>::identity(),
+                    <T as Monoid<Additive>>::identity()),
+                3 => Quaternion::new(
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Additive>>::identity(),
+                    <T as Monoid<Multiplicative>>::identity()),
                 _ => unreachable!(),
             }
         }
