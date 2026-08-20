@@ -28,10 +28,9 @@ proptest = { version = "1", optional = true }
 # inverses / distributivity) — see src/laws.
 proptest = "1"
 # The derive macro: one line brings a struct into the whole tower (tests).
-# Lives in its own repo (alga2-derive-rs); the local path serves the
-# monorepo-era checkout, the version serves the published crate. alga2-derive
-# 0.1.0 publishes before alga2, so the registry requirement resolves.
-alga2-derive = { version = "0.1", path = "D:/CS/Rust/alga2-derive-rs" }
+# Lives in its own repo (alga2-derive-rs). Path-only: cargo strips path
+# dev-deps at publish time, so alga2 publishes independently.
+alga2-derive = { path = "D:/CS/Rust/alga2-derive-rs" }
 
 [features]
 # Mainstream users get the full matrix out of the box; embedded/no_std users
