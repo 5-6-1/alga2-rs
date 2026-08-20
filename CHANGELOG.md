@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2026-08
 
 ### Added
 
@@ -54,9 +54,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `rem_euclid` (usize wrapping overflow).
 - `Complex<f32>`/`Quaternion<f32>` now match the `f64` coverage.
 
-## [0.0.1] - not yet released
-
-Initial scaffold: the algebraic tower (`Magma` → `AbelianGroup`,
-`Semiring` → `Field`), operator markers, numeric impl matrix, and the
-law-testing skeleton. Superseded by the Unreleased work above; kept only
-for the historical record.
+[0.1.0]: https://github.com/5-6-1/alga2/releases/tag/v0.1.0

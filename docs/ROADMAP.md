@@ -90,10 +90,17 @@
 | 定律测试发现我们自己的 bug   | 测试失败                          | 修复它们——这验证了定律层                                         |
 | nalgebra/sprs 拒绝迁移       | 两轮讨论无进展                    | 转向新项目（泛型数学 / 密码学 / ML）；alga2 独立存在             |
 
-## 8. 发布检查清单（每个版本）
+## 8. 发布检查清单（v0.1.0）
 
-1. `batch-impl` 切换到 crates.io 版本（已是默认）。
-2. CHANGELOG 条目；刷新 README 横幅计数。
-3. `cargo package` 验证；`cargo publish`。
-4. `git tag vX.Y.Z`；GitHub 发布。
-5. 更新 §2 中的指标行。
+1. ✅ 文档集齐（README/CHANGELOG/CONTRIBUTING/SECURITY/ALGA-DIFF/DESIGN）。
+2. ✅ manifest metadata 完整（repository/homepage/documentation/keywords/exclude）。
+3. ✅ `cargo package --list` 干净（target/.idea/proptest-regressions 已排除）。
+4. ⏳ **batch-impl 0.9.0 先发布**（承载 X<> sync、trait 名继承等本 crate 反馈的特性）；
+   随后把 `Cargo.toml` 的 `batch-impl` 依赖从 path 切到 crates.io `0.9`。
+5. ⏳ `cargo publish --dry-run`（发布前最后验证）→ `cargo publish`。
+6. ⏳ `git tag v0.1.0`；GitHub 发布（含 README 横幅更新）。
+7. ⏳ 更新 §2 指标行；batch-impl README 增加 alga2 真实案例章节。
+
+> 当前阻塞点：batch-impl 0.9.0 尚未发布到 crates.io（path 依赖无法打包，
+> `cargo package` 要求依赖带版本号）。发布顺序不可颠倒：batch-impl →
+> alga2 切换依赖 → alga2 发布。

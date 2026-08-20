@@ -15,9 +15,10 @@ rust-version = "1.93.0"
 exclude = ["rustfmt.toml", ".github/", ".idea/", "proptest-regressions/", "Cargo.lock"]
 
 [dependencies]
-# Local dev path; switch to the crates.io release once batch-impl 0.9.0
-# (with the X<> sync + trait-name inheritance features) is published.
-batch-impl = { path = "D:/CS/Rust/batch-impl" }  # → "0.9" before release
+# batch-impl 0.9.0 (X<> sync, trait-name inheritance) must be published
+# BEFORE alga2: this path is the local dev checkout; flip to the crates.io
+# requirement for the release commit. Both are valid in one declaration.
+batch-impl = { version = "0.9", path = "D:/CS/Rust/batch-impl" }
 # Optional: powers the exported law-testing strategies (src/laws) for
 # downstream users. Re-declared as a dev-dependency so `cargo test` can use
 # it without enabling the feature.
