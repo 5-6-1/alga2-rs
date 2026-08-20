@@ -6,9 +6,20 @@
 //! satisfy, which is exactly the check you want):
 //!
 //! - `"Monoid"` — additive Magma → Monoid, multiplicative Magma → Monoid
-//! - `"Group"` — + additive Group/AbelianGroup
+//! - `"Group"` — + additive Group/AbelianGroup (and Quasigroup/Loop on the
+//!   additive side; the multiplicative ladder stops at Monoid)
 //! - `"Ring"` (default) — + Semiring → CommutativeRing, plus Module/VectorSpace
 //! - `"Field"` — + DivisionRing → Field (field-typed fields only)
+//!
+//! Requirements and bounds:
+//!
+//! - Structs only (named, tuple, or generic — including where-clause
+//!   constraints); enums, unions, unit and empty structs are rejected with
+//!   a clear error.
+//! - Every field must reach the target level; mixed field types need a
+//!   common `Module::Scalar` (the first field's scalar is used).
+//! - No tower imports are needed at the call site: the generated method
+//!   bodies resolve through the impls they live in.
 //!
 //! ```
 //! use alga2::op::Additive;
@@ -165,10 +176,23 @@ fn construct(fields: &[FieldInfo], exprs: &[TS]) -> TS {
     }
 }
 
-/// Deduplicated field types (a `where` bound per distinct type).
+/// Deduplicated field types (a `where` bound per distinct type), in field
+/// order — deterministic expansion output.
 fn field_types(fields: &[FieldInfo]) -> Vec<&Type> {
-    let mut seen = std::collections::HashSet::new();
-    fields.iter().map(|f| &f.ty).filter(|t| seen.insert(t.to_token_stream().to_string())).collect()
+    let mut seen: Vec<String> = vec![];
+    fields
+        .iter()
+        .map(|f| &f.ty)
+        .filter(|t| {
+            let key = t.to_token_stream().to_string();
+            if seen.contains(&key) {
+                false
+            } else {
+                seen.push(key);
+                true
+            }
+        })
+        .collect()
 }
 
 fn op_path(op: &str) -> TS {
@@ -189,6 +213,23 @@ struct Gen<'a> {
 }
 
 impl Gen<'_> {
+    /// The struct's own where predicates (if any) plus the field bounds,
+    /// as one `where` clause — or nothing when there are no predicates.
+    fn where_clause(&self, extra: &[TS]) -> TS {
+        let mut preds: Vec<syn::WherePredicate> = Vec::new();
+        if let Some(w) = self.where_g {
+            preds.extend(w.predicates.iter().cloned());
+        }
+        for e in extra {
+            preds.push(syn::parse_quote!(#e));
+        }
+        if preds.is_empty() {
+            quote!()
+        } else {
+            quote!(where #(#preds),*)
+        }
+    }
+
     /// Per-field `T: Trait<Op>` bound list.
     fn bounds(&self, fields: &[FieldInfo], trait_name: &str, op: &str) -> Vec<TS> {
         let tr = trait_path(trait_name);
@@ -201,7 +242,6 @@ impl Gen<'_> {
         let n = self.name;
         let impl_g = self.impl_g;
         let ty_g = self.ty_g;
-        let where_g = self.where_g;
         let op_ts = op_path(op);
         let mag = trait_path("Magma");
         let semi = trait_path("Semigroup");
@@ -229,6 +269,9 @@ impl Gen<'_> {
         let magma_b = self.bounds(fields, "Magma", op);
         let monoid_b = self.bounds(fields, "Monoid", op);
         let group_b = self.bounds(fields, "Group", op);
+        let w_magma = self.where_clause(&magma_b);
+        let w_monoid = self.where_clause(&monoid_b);
+        let w_group = self.where_clause(&group_b);
 
         let c_combine = construct(fields, &combine_exprs);
         let c_identity = construct(fields, &identity_exprs);
@@ -238,37 +281,37 @@ impl Gen<'_> {
         // crate too; the multiplicative side stops at Monoid.
         let quasigroup_ladder = (op == "Additive").then(|| quote! {
             impl #impl_g #quasi<#op_ts> for #n #ty_g
-            where #where_g #(#magma_b),*
+            #w_magma
             {}
             impl #impl_g #loop_t<#op_ts> for #n #ty_g
-            where #where_g #(#monoid_b),*
+            #w_monoid
             {}
         });
 
         // Group/AbelianGroup only when the ladder runs that far.
         let group_ladder = (max_level == "Group").then(|| quote! {
             impl #impl_g #grp<#op_ts> for #n #ty_g
-            where #where_g #(#group_b),*
+            #w_group
             {
                 fn inverse(&self) -> Self { #c_inverse }
             }
             impl #impl_g #abel<#op_ts> for #n #ty_g
-            where #where_g #(#group_b),*
+            #w_group
             {}
         });
 
         quote! {
             impl #impl_g #mag<#op_ts> for #n #ty_g
-            where #where_g #(#magma_b),*
+            #w_magma
             {
                 fn combine(&self, rhs: &Self) -> Self { #c_combine }
             }
             impl #impl_g #semi<#op_ts> for #n #ty_g
-            where #where_g #(#magma_b),*
+            #w_magma
             {}
             #quasigroup_ladder
             impl #impl_g #mon<#op_ts> for #n #ty_g
-            where #where_g #(#monoid_b),*
+            #w_monoid
             {
                 fn identity() -> Self { #c_identity }
             }
@@ -282,7 +325,6 @@ impl Gen<'_> {
         let n = self.name;
         let impl_g = self.impl_g;
         let ty_g = self.ty_g;
-        let where_g = self.where_g;
 
         let semiring_b = field_types(fields).iter().map(|ty| {
             quote!(#ty: ::alga2::tower::Semiring<::alga2::op::Additive, ::alga2::op::Multiplicative>)
@@ -298,6 +340,9 @@ impl Gen<'_> {
         } else {
             &semiring_b
         };
+        let w_semiring = self.where_clause(&semiring_b);
+        let w_comm = self.where_clause(comm_b);
+        let w_field = self.where_clause(&field_b);
 
         let inv_exprs = fields.iter().map(|f| {
             let a = self_access(f);
@@ -308,24 +353,24 @@ impl Gen<'_> {
         // DivisionRing/Field only at `Field` level.
         let field_ladder = (level == Level::Field).then(|| quote! {
             impl #impl_g ::alga2::tower::DivisionRing<::alga2::op::Additive, ::alga2::op::Multiplicative> for #n #ty_g
-            where #where_g #(#field_b),*
+            #w_field
             {
                 fn inv(&self) -> Self { #c_inv }
             }
             impl #impl_g ::alga2::tower::Field<::alga2::op::Additive, ::alga2::op::Multiplicative> for #n #ty_g
-            where #where_g #(#field_b),*
+            #w_field
             {}
         });
 
         quote! {
             impl #impl_g ::alga2::tower::Semiring<::alga2::op::Additive, ::alga2::op::Multiplicative> for #n #ty_g
-            where #where_g #(#semiring_b),*
+            #w_semiring
             {}
             impl #impl_g ::alga2::tower::Ring<::alga2::op::Additive, ::alga2::op::Multiplicative> for #n #ty_g
-            where #where_g #(#semiring_b),*
+            #w_semiring
             {}
             impl #impl_g ::alga2::tower::CommutativeRing<::alga2::op::Additive, ::alga2::op::Multiplicative> for #n #ty_g
-            where #where_g #(#comm_b),*
+            #w_comm
             {}
             #field_ladder
         }
@@ -336,12 +381,12 @@ impl Gen<'_> {
         let n = self.name;
         let impl_g = self.impl_g;
         let ty_g = self.ty_g;
-        let where_g = self.where_g;
         let first = fields.first().unwrap();
 
         let module_b = field_types(fields).iter().map(|ty| {
             quote!(#ty: ::alga2::tower::Module<::alga2::op::Additive, ::alga2::op::Multiplicative>)
         }).collect::<Vec<_>>();
+        let w_module = self.where_clause(&module_b);
 
         let scale_exprs = fields.iter().map(|f| {
             let s_ = &f.suffix;
@@ -353,7 +398,7 @@ impl Gen<'_> {
         let ft = &first.ty;
         quote! {
             impl #impl_g ::alga2::tower::Module<::alga2::op::Additive, ::alga2::op::Multiplicative> for #n #ty_g
-            where #where_g #(#module_b),*
+            #w_module
             {
                 type Scalar = <#ft as ::alga2::tower::Module<::alga2::op::Additive, ::alga2::op::Multiplicative>>::Scalar;
                 fn scale(s: &Self::Scalar, v: Self) -> Self { #c_scale }
