@@ -7,56 +7,39 @@
 //! runs to 16; `BoundedLattice` (via `Lattice` → `PartialOrd`) and `Power`
 //! (via `Clone`) stop at 12.
 
-use batch_impl::{batch_impl_only, batch_trait};
+use batch_impl::batch_trait;
 
 use crate::op::{Additive, Multiplicative};
 use crate::tower::{Band, BoundedLattice, EuclideanDomain, LieAlgebra, Monoid, Power};
-
-// ---- Band: idempotent semigroups — the boolean `and` (and its tuples) ----
-
-// ---- BoundedLattice: integer top/bottom, booleans, and tuples ----
-
-#[batch_impl_only(
-    [@u*, @i*] #top{Self::MAX} #bottom{Self::MIN},
-    bool #top{true} #bottom{false},
-    (<BoundedLattice>,).1..=12 impl{(A@..,)} #top{( @(@A::top(),).. )} #bottom{( @(@A::bottom(),).. )},
-)]
-trait BoundedLattice: Lattice {
-    fn top() -> Self;
-    fn bottom() -> Self;
-}
-
-// ---- EuclideanDomain: the integers (euclidean division + gcd) ----
-
-#[batch_impl_only(
-    EuclideanDomain<Additive, Multiplicative> [
-        [@u8..u64, usize] #euclidean_norm{*self as u128},
-        u128 #euclidean_norm{*self},
-        [@i8..i64, isize] #euclidean_norm{self.unsigned_abs() as u128},
-        i128 #euclidean_norm{self.unsigned_abs()},
-    ]#quot_rem{(self.div_euclid(*divisor), self.rem_euclid(*divisor))}
-)]
-trait EuclideanDomain<Oa: Operator, Om: Operator>: CommutativeRing<Oa, Om> {
-    fn quot_rem(&self, divisor: &Self) -> (Self, Self);
-    fn euclidean_norm(&self) -> u128;
-}
-
-// ---- LieAlgebra: the trivial (abelian) bracket on the numerics ----
-
-#[batch_impl_only(
-    LieAlgebra<Additive> [@num,bool] #bracket{<Self as Monoid<Additive>>::identity()},
-)]
-trait LieAlgebra<Op: Operator>: Magma<Op> {
-    fn bracket(&self, _other: &Self) -> Self;
-}
-
-// Marker structures without directives: one `batch_trait!` segment each.
 
 batch_trait! {
     Band: Band<Multiplicative> [bool, (<Band<> >,).1..=16];
     Power: [Power<Additive>,Power<Multiplicative>] [@num,bool],
         Power<Additive> (<Power<> >,).1..=12,
         Power<Multiplicative> (<Power<> >,).1..=12;
+    BoundedLattice: BoundedLattice [@u*,@i*]
+        {fn top() -> Self { Self::MAX } fn bottom() -> Self { Self::MIN }},
+        BoundedLattice bool
+        {fn top() -> Self { true } fn bottom() -> Self { false }},
+        BoundedLattice (<BoundedLattice>,).1..=12 impl{(A@..,)}
+        {fn top() -> Self { ( @(@A::top(),).. ) } fn bottom() -> Self { ( @(@A::bottom(),).. ) }};
+    LieAlgebra: LieAlgebra<Additive> [@num,bool]
+        {fn bracket(&self, _other: &Self) -> Self { <Self as Monoid<Additive>>::identity() }};
+    // Euclidean division: `quot_rem` is the same div_euclid/rem_euclid pair
+    // for every family; only the norm representation differs (the `@u*` cast
+    // vs the `@i*` unsigned-abs — a type reality, not a duplication).
+    EuclideanDomain: EuclideanDomain<Additive, Multiplicative> [@u8..u64, usize]
+        {fn quot_rem(&self, divisor: &Self) -> (Self, Self) { (self.div_euclid(*divisor), self.rem_euclid(*divisor)) }
+         fn euclidean_norm(&self) -> u128 { *self as u128 }},
+        EuclideanDomain<Additive, Multiplicative> u128
+        {fn quot_rem(&self, divisor: &Self) -> (Self, Self) { (self.div_euclid(*divisor), self.rem_euclid(*divisor)) }
+         fn euclidean_norm(&self) -> u128 { *self }},
+        EuclideanDomain<Additive, Multiplicative> [@i8..i64, isize]
+        {fn quot_rem(&self, divisor: &Self) -> (Self, Self) { (self.div_euclid(*divisor), self.rem_euclid(*divisor)) }
+         fn euclidean_norm(&self) -> u128 { self.unsigned_abs() as u128 }},
+        EuclideanDomain<Additive, Multiplicative> i128
+        {fn quot_rem(&self, divisor: &Self) -> (Self, Self) { (self.div_euclid(*divisor), self.rem_euclid(*divisor)) }
+         fn euclidean_norm(&self) -> u128 { self.unsigned_abs() }};
 }
 
 // `StarSemiring` (Kleene star) deliberately has no in-crate inhabitant: its

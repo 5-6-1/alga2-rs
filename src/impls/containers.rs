@@ -9,7 +9,7 @@ use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use batch_impl::{batch_impl_only, batch_trait};
+use batch_impl::batch_trait;
 
 use crate::op::{Additive, Operator};
 use crate::tower::{
@@ -17,73 +17,28 @@ use crate::tower::{
     Ring, Semigroup, Semiring,
 };
 
-// ---- Magma: Vec/String concatenate; smart pointers delegate ----
-
-#[batch_impl_only(
-    Magma<Additive> [
-        <T: Clone> Vec<T> #combine{let mut v = self.clone(); v.extend(rhs.iter().cloned()); v},
-        String #combine{let mut s = self.clone(); s.push_str(rhs); s},
-    ],
-)]
-trait Magma<Op: Operator> {
-    fn combine(&self, rhs: &Self) -> Self;
-}
-
-// A smart pointer is a Magma for any operator its inner type is: pure
-// delegation through one deref — a single operator-generic spec covers
-// every operator (Additive/Multiplicative). The wrapper list `[Box,Rc,Arc].T`
-// mints all three targets; the `impl{Box<T>}` shape template binds `Box` to
-// each wrapper, so one `Box::new` body becomes `Rc::new`/`Arc::new` per
-// target.
-
-#[batch_impl_only(
-    <Op: Operator> Magma<Op> <T: Magma<Op>> [Box,Rc,Arc] T impl{Box<T>}
-        #combine{Box::new((**self).combine(&**rhs))},
-)]
-trait Magma<Op: Operator> {
-    fn combine(&self, rhs: &Self) -> Self;
-}
-
-#[batch_impl_only(
-    Semigroup<Additive> [
-        <T: Clone> Vec<T>,
-        String,
-    ],
-)]
-trait Semigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
-    Monoid<Additive> [
-        <T: Clone> Vec<T> #identity{Vec::new()},
-        String #identity{String::new()},
-    ],
-)]
-trait Monoid<Op: Operator>: Semigroup<Op> {
-    fn identity() -> Self;
-}
-
-#[batch_impl_only(
-    <Op: Operator> Monoid<Op> <T: Monoid<Op>> [Box,Rc,Arc] T impl{Box<T>}
-        #identity{Box::new(T::identity())},
-)]
-trait Monoid<Op: Operator>: Semigroup<Op> {
-    fn identity() -> Self;
-}
-
-// The additive ladder continues for smart pointers only (Vec/String are
-// free monoids, no inverses); the multiplicative ladder stops at Monoid
-// (integers have no multiplicative inverses).
-
-// ---- semiring ladder: smart pointers delegate the ring/field levels ----
-// Marker levels are one `batch_trait!` line per trait (the wrapper list in
-// the target). `#blanket` is not applicable: every method-carrying level's
-// methods return `Self`, which blanket delegation refuses (the forwarded
-// call returns the inner type). Method levels hand-write the deref forward.
+// ---- one batch_trait! block: Vec/String concatenate; smart pointers
+// ---- delegate (the `impl{Box<T>}` shape template rewrites `Box::new` into
+// ---- `Rc::new`/`Arc::new` per wrapper) ----
 
 batch_trait! {
     @ptr=[Box,Rc,Arc];
     @impl=<T:@trait<> >@ptr T;
-    Semigroup: <Op: Operator> Semigroup<Op> @impl;
+    Magma: Magma<Additive> <T: Clone> Vec<T>
+        {fn combine(&self, rhs: &Self) -> Self { let mut v = self.clone(); v.extend(rhs.iter().cloned()); v }},
+        Magma<Additive> String
+        {fn combine(&self, rhs: &Self) -> Self { let mut s = self.clone(); s.push_str(rhs); s }},
+        <Op: Operator> Magma<Op> <T: Magma<Op>> [Box,Rc,Arc] T impl{Box<T>}
+        {fn combine(&self, rhs: &Self) -> Self { Box::new((**self).combine(&**rhs)) }};
+    Semigroup: Semigroup<Additive> <T: Clone> Vec<T>,
+        Semigroup<Additive> String,
+        <Op: Operator> Semigroup<Op> @impl;
+    Monoid: Monoid<Additive> <T: Clone> Vec<T>
+        {fn identity() -> Self { Vec::new() }},
+        Monoid<Additive> String
+        {fn identity() -> Self { String::new() }},
+        <Op: Operator> Monoid<Op> <T: Monoid<Op>> [Box,Rc,Arc] T impl{Box<T>}
+        {fn identity() -> Self { Box::new(T::identity()) }};
     Quasigroup: <Op: Operator> Quasigroup<Op> @impl;
     Loop: <Op: Operator> Loop<Op> @impl;
     Group: <Op: Operator> Group<Op> @impl impl{Box<T>} {fn inverse(&self) -> Self { Box::new((**self).inverse()) }};

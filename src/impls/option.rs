@@ -11,32 +11,20 @@
 //! additive part must be a group). This mirrors the "monoid with zero" role
 //! of `Option` in algebra.
 
-use batch_impl::batch_impl_only;
+use batch_impl::batch_trait;
 
 use crate::op::{Additive, Multiplicative};
 use crate::tower::{Magma, Monoid, Semigroup};
 
-#[batch_impl_only(
-    <T: Magma<> > [Magma<Additive>, Magma<Multiplicative>]
-        . Option<T> #combine{match (self, rhs) { (Some(a), Some(b)) => Some(a.combine(b)), _ => None }},
-
-)]
-trait Magma<Op: Operator> {
-    fn combine(&self, rhs: &Self) -> Self;
-}
-
-#[batch_impl_only(
-    <T: Semigroup<> >[ Semigroup<Additive>,
-    Semigroup<Multiplicative>] Option<T>,
-)]
-trait Semigroup<Op: Operator>: Magma<Op> {}
-
-#[batch_impl_only(
-    <T: Monoid<> >[ Monoid<Additive> #identity{None},
-    Monoid<Multiplicative> #identity{Some(T::identity())}] Option<T>
-)]
-trait Monoid<Op: Operator>: Semigroup<Op> {
-    fn identity() -> Self;
+batch_trait! {
+    Magma: <T: Magma<> > [Magma<Additive>, Magma<Multiplicative>] Option<T>
+        {fn combine(&self, rhs: &Self) -> Self {
+            match (self, rhs) { (Some(a), Some(b)) => Some(a.combine(b)), _ => None }
+        }};
+    Semigroup: <T: Semigroup<> > [Semigroup<Additive>, Semigroup<Multiplicative>] Option<T>;
+    Monoid: <T: Monoid<> > Monoid<Additive> Option<T> {fn identity() -> Self { None }},
+        <T: Monoid<> > Monoid<Multiplicative> Option<T>
+        {fn identity() -> Self { Some(T::identity()) }};
 }
 
 #[cfg(test)]

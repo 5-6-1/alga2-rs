@@ -2,8 +2,12 @@
 //! division ring over a real field `T` — a ring whose multiplication does
 //! not commute, a four-dimensional vector space over `T`, and a normed
 //! algebra (the euclidean norm of the four components).
+//!
+//! The method bodies are hand-written (the Hamiltonian product and the
+//! four-component algebra read better as plain `impl`s); the marker levels
+//! ride `batch_trait!`.
 
-use batch_impl::{batch_impl_only, batch_trait};
+use batch_impl::batch_trait;
 
 use crate::op::{Additive, Multiplicative};
 use crate::quaternion::Quaternion;
@@ -15,73 +19,64 @@ use crate::tower::{
 
 // ---- additive side: component-wise ----
 
-#[batch_impl_only(
-    Magma<Additive> <T: @trait<> > Quaternion<T> impl{@trait<>} #combine{
+impl<T: Magma<Additive>> Magma<Additive> for Quaternion<T> {
+    fn combine(&self, rhs: &Self) -> Self {
         Quaternion::new(
-            <T as Magma<> >::combine(self.w(), rhs.w()),
-            <T as Magma<> >::combine(self.x(), rhs.x()),
-            <T as Magma<> >::combine(self.y(), rhs.y()),
-            <T as Magma<> >::combine(self.z(), rhs.z()),
+            <T as Magma<Additive>>::combine(self.w(), rhs.w()),
+            <T as Magma<Additive>>::combine(self.x(), rhs.x()),
+            <T as Magma<Additive>>::combine(self.y(), rhs.y()),
+            <T as Magma<Additive>>::combine(self.z(), rhs.z()),
         )
-    },
-)]
-trait Magma<Op: Operator> {
-    fn combine(&self, rhs: &Self) -> Self;
+    }
 }
 
-#[batch_impl_only(
-    Monoid<Additive> <T: @trait<> > Quaternion<T> impl{@trait<>} #identity{
+impl<T: Monoid<Additive>> Monoid<Additive> for Quaternion<T> {
+    fn identity() -> Self {
         Quaternion::new(
-            <T as Monoid<> >::identity(),
-            <T as Monoid<> >::identity(),
-            <T as Monoid<> >::identity(),
-            <T as Monoid<> >::identity(),
+            <T as Monoid<Additive>>::identity(),
+            <T as Monoid<Additive>>::identity(),
+            <T as Monoid<Additive>>::identity(),
+            <T as Monoid<Additive>>::identity(),
         )
-    },
-)]
-trait Monoid<Op: Operator>: Semigroup<Op> {
-    fn identity() -> Self;
+    }
 }
 
-#[batch_impl_only(
-    Group<Additive> <T: @trait<> > Quaternion<T> impl{@trait<>} #inverse{
+impl<T: Group<Additive>> Group<Additive> for Quaternion<T> {
+    fn inverse(&self) -> Self {
         Quaternion::new(
-            <T as Group<> >::inverse(self.w()),
-            <T as Group<> >::inverse(self.x()),
-            <T as Group<> >::inverse(self.y()),
-            <T as Group<> >::inverse(self.z()),
+            <T as Group<Additive>>::inverse(self.w()),
+            <T as Group<Additive>>::inverse(self.x()),
+            <T as Group<Additive>>::inverse(self.y()),
+            <T as Group<Additive>>::inverse(self.z()),
         )
-    },
-)]
-trait Group<Op: Operator>: Loop<Op> {
-    fn inverse(&self) -> Self;
+    }
 }
 
 // ---- multiplicative side: Hamilton's product (non-commutative) ----
 
-#[batch_impl_only(
-    Magma<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T> impl{@trait<>} #combine{
+impl<T: Ring<Additive, Multiplicative>> Magma<Multiplicative> for Quaternion<T> {
+    fn combine(&self, rhs: &Self) -> Self {
         Quaternion::new(
             // w1w2 − x1x2 − y1y2 − z1z2
-            <T as Magma<Additive> >::combine(
-                &<T as Magma<> >::combine(self.w(), rhs.w()),
-                &<T as Group<Additive> >::inverse(&<T as Magma<Additive>>::combine(
-                    &<T as Magma<Additive> >::combine(
-                        &<T as Magma<> >::combine(self.x(), rhs.x()),
-                        &<T as Magma<> >::combine(self.y(), rhs.y()),
+            <T as Magma<Additive>>::combine(
+                &<T as Magma<Multiplicative>>::combine(self.w(), rhs.w()),
+                &<T as Group<Additive>>::inverse(&<T as Magma<Additive>>::combine(
+                    &<T as Magma<Additive>>::combine(
+                        &<T as Magma<Multiplicative>>::combine(self.x(), rhs.x()),
+                        &<T as Magma<Multiplicative>>::combine(self.y(), rhs.y()),
                     ),
-                    &<T as Magma<> >::combine(self.z(), rhs.z()),
+                    &<T as Magma<Multiplicative>>::combine(self.z(), rhs.z()),
                 )),
             ),
             // w1x2 + x1w2 + y1z2 − z1y2
-            <T as Magma<Additive> >::combine(
-                &<T as Magma<Additive> >::combine(
-                    &<T as Magma<> >::combine(self.w(), rhs.x()),
-                    &<T as Magma<> >::combine(self.x(), rhs.w()),
+            <T as Magma<Additive>>::combine(
+                &<T as Magma<Additive>>::combine(
+                    &<T as Magma<Multiplicative>>::combine(self.w(), rhs.x()),
+                    &<T as Magma<Multiplicative>>::combine(self.x(), rhs.w()),
                 ),
-                &<T as Magma<Additive> >::combine(
-                    &<T as Magma<> >::combine(self.y(), rhs.z()),
-                    &<T as Group<Additive> >::inverse(&<T as Magma<> >::combine(
+                &<T as Magma<Additive>>::combine(
+                    &<T as Magma<Multiplicative>>::combine(self.y(), rhs.z()),
+                    &<T as Group<Additive>>::inverse(&<T as Magma<Multiplicative>>::combine(
                         self.z(),
                         rhs.y(),
                     )),
@@ -90,57 +85,53 @@ trait Group<Op: Operator>: Loop<Op> {
             // w1y2 − x1z2 + y1w2 + z1x2
             <T as Magma<Additive>>::combine(
                 &<T as Magma<Additive>>::combine(
-                    &<T as Magma<> >::combine(self.w(), rhs.y()),
-                    &<T as Group<Additive>>::inverse(&<T as Magma<> >::combine(
+                    &<T as Magma<Multiplicative>>::combine(self.w(), rhs.y()),
+                    &<T as Group<Additive>>::inverse(&<T as Magma<Multiplicative>>::combine(
                         self.x(),
                         rhs.z(),
                     )),
                 ),
                 &<T as Magma<Additive>>::combine(
-                    &<T as Magma<> >::combine(self.y(), rhs.w()),
-                    &<T as Magma<> >::combine(self.z(), rhs.x()),
+                    &<T as Magma<Multiplicative>>::combine(self.y(), rhs.w()),
+                    &<T as Magma<Multiplicative>>::combine(self.z(), rhs.x()),
                 ),
             ),
             // w1z2 + x1y2 − y1x2 + z1w2
             <T as Magma<Additive>>::combine(
                 &<T as Magma<Additive>>::combine(
-                    &<T as Magma<> >::combine(self.w(), rhs.z()),
-                    &<T as Magma<> >::combine(self.x(), rhs.y()),
+                    &<T as Magma<Multiplicative>>::combine(self.w(), rhs.z()),
+                    &<T as Magma<Multiplicative>>::combine(self.x(), rhs.y()),
                 ),
                 &<T as Magma<Additive>>::combine(
-                    &<T as Group<Additive>>::inverse(&<T as Magma<> >::combine(
+                    &<T as Group<Additive>>::inverse(&<T as Magma<Multiplicative>>::combine(
                         self.y(),
                         rhs.x(),
                     )),
-                    &<T as Magma<> >::combine(self.z(), rhs.w()),
+                    &<T as Magma<Multiplicative>>::combine(self.z(), rhs.w()),
                 ),
             ),
         )
-    },
-)]
-trait Magma<Op: Operator> {
-    fn combine(&self, rhs: &Self) -> Self;
+    }
 }
 
-#[batch_impl_only(
-    Monoid<Multiplicative> <T: Ring<Additive, Multiplicative>> Quaternion<T> #identity{
+impl<T: Ring<Additive, Multiplicative>> Monoid<Multiplicative> for Quaternion<T> {
+    fn identity() -> Self {
         Quaternion::new(
             <T as Monoid<Multiplicative>>::identity(),
             <T as Monoid<Additive>>::identity(),
             <T as Monoid<Additive>>::identity(),
             <T as Monoid<Additive>>::identity(),
         )
-    },
-)]
-trait Monoid<Op: Operator>: Semigroup<Op> {
-    fn identity() -> Self;
+    }
 }
 
 // `Quaternion<T>` is a division ring, never a commutative ring (hence never
 // a field): the multiplication is the Hamiltonian product.
 
-#[batch_impl_only(
-    DivisionRing<Additive, Multiplicative> <T: Field<Additive, Multiplicative> + Copy> Quaternion<T> #inv{
+impl<T: Field<Additive, Multiplicative> + Copy> DivisionRing<Additive, Multiplicative>
+    for Quaternion<T>
+{
+    fn inv(&self) -> Self {
         let conj = Quaternion::new(
             *self.w(),
             <T as Group<Additive>>::inverse(self.x()),
@@ -161,32 +152,104 @@ trait Monoid<Op: Operator>: Semigroup<Op> {
         // q⁻¹ = conj(q) / ‖q‖²
         <Quaternion<T> as Magma<Multiplicative>>::combine(
             &conj,
-            &Quaternion::new(inv_norm2, <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity()),
+            &Quaternion::new(
+                inv_norm2,
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+            ),
         )
-    },
-)]
-trait DivisionRing<Oa: Operator, Om: Operator>: Ring<Oa, Om> {
-    fn inv(&self) -> Self;
+    }
 }
 
 // ---- module level: a four-dimensional vector space over `T` ----
 
-#[batch_impl_only(
-    Module<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>
-        #Scalar{T}
-        #scale{Quaternion::new(
+impl<T: Field<Additive, Multiplicative>> Module<Additive, Multiplicative> for Quaternion<T> {
+    type Scalar = T;
+
+    fn scale(s: &Self::Scalar, v: Self) -> Self {
+        Quaternion::new(
             <T as Magma<Multiplicative>>::combine(s, v.w()),
             <T as Magma<Multiplicative>>::combine(s, v.x()),
             <T as Magma<Multiplicative>>::combine(s, v.y()),
             <T as Magma<Multiplicative>>::combine(s, v.z()),
-        )},
-)]
-trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
-    type Scalar;
-    fn scale(s: &Self::Scalar, v: Self) -> Self;
+        )
+    }
 }
 
-// Marker levels: `batch_trait!`.
+// ---- analytic layer: the euclidean norm of the four components ----
+
+impl<T: Real + ClosedAdd + ClosedMul + Copy> NormedSpace<Additive, Multiplicative>
+    for Quaternion<T>
+{
+    type RealField = T;
+
+    fn norm_squared(&self) -> Self::RealField {
+        *self.w() * *self.w()
+            + *self.x() * *self.x()
+            + *self.y() * *self.y()
+            + *self.z() * *self.z()
+    }
+
+    fn scale_real(&self, r: Self::RealField) -> Self {
+        Quaternion::new(*self.w() * r, *self.x() * r, *self.y() * r, *self.z() * r)
+    }
+}
+
+impl<T: Real + ClosedAdd + ClosedMul + Copy> InnerSpace<Additive, Multiplicative>
+    for Quaternion<T>
+{
+    fn inner_product(&self, other: &Self) -> Self::RealField {
+        *self.w() * *other.w()
+            + *self.x() * *other.x()
+            + *self.y() * *other.y()
+            + *self.z() * *other.z()
+    }
+}
+
+impl<T: Real + ClosedAdd + ClosedMul + Copy> FiniteDimVectorSpace<Additive, Multiplicative>
+    for Quaternion<T>
+{
+    fn dimension() -> usize {
+        4
+    }
+
+    fn canonical_basis_element(_i: usize) -> Self {
+        match _i {
+            0 => Quaternion::new(
+                <T as Monoid<Multiplicative>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+            ),
+            1 => Quaternion::new(
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Multiplicative>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+            ),
+            2 => Quaternion::new(
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Multiplicative>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+            ),
+            3 => Quaternion::new(
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Additive>>::identity(),
+                <T as Monoid<Multiplicative>>::identity(),
+            ),
+            _ => unreachable!(),
+        }
+    }
+
+    fn dot(&self, other: &Self) -> Self::Scalar {
+        self.inner_product(other)
+    }
+}
+
+// ---- marker levels ----
 
 batch_trait! {
     Semigroup: Semigroup<Additive> <T: @trait<>> Quaternion<T>,
@@ -199,51 +262,6 @@ batch_trait! {
     VectorSpace: VectorSpace<Additive, Multiplicative> <T: Field<Additive, Multiplicative>> Quaternion<T>
         where{Self::Scalar: Field<Additive, Multiplicative>};
     FiniteDimInnerSpace: FiniteDimInnerSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>;
-}
-
-// ---- analytic layer: the euclidean norm of the four components ----
-
-#[batch_impl_only(
-    NormedSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T> #RealField{T}
-        #norm_squared{
-            *self.w() * *self.w() + *self.x() * *self.x() + *self.y() * *self.y() + *self.z() * *self.z()
-        }
-        #scale_real{
-            Quaternion::new(*self.w() * r, *self.x() * r, *self.y() * r, *self.z() * r)
-        },
-)]
-trait NormedSpace<Oa: Operator, Om: Operator>: VectorSpace<Oa, Om> {
-    type RealField;
-    fn norm_squared(&self) -> Self::RealField;
-    fn scale_real(&self, r: Self::RealField) -> Self;
-}
-
-#[batch_impl_only(
-    InnerSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>
-        #inner_product{*self.w() * *other.w() + *self.x() * *other.x() + *self.y() * *other.y() + *self.z() * *other.z()},
-)]
-trait InnerSpace<Oa: Operator, Om: Operator>: NormedSpace<Oa, Om> {
-    fn inner_product(&self, other: &Self) -> Self::RealField;
-}
-
-#[batch_impl_only(
-    FiniteDimVectorSpace<Additive, Multiplicative> <T: Real + ClosedAdd + ClosedMul + Copy> Quaternion<T>
-        #dimension{4}
-        #canonical_basis_element{
-            match _i {
-                0 => Quaternion::new(<T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity()),
-                1 => Quaternion::new(<T as Monoid<Additive>>::identity(), <T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity()),
-                2 => Quaternion::new(<T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity()),
-                3 => Quaternion::new(<T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Additive>>::identity(), <T as Monoid<Multiplicative>>::identity()),
-                _ => unreachable!(),
-            }
-        }
-        #dot{self.inner_product(other)},
-)]
-trait FiniteDimVectorSpace<Oa: Operator, Om: Operator>: VectorSpace<Oa, Om> {
-    fn dimension() -> usize;
-    fn canonical_basis_element(_i: usize) -> Self;
-    fn dot(&self, other: &Self) -> Self::Scalar;
 }
 
 #[cfg(test)]

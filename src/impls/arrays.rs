@@ -1,91 +1,72 @@
 //! Array impls: `[T; N]` is component-wise, like tuples, but without the
 //! std arity ceiling — arrays of any `N` carry `Clone`/`PartialEq`/etc., so
 //! the whole tower runs on `[T; N]` (contrast the tuple caps in `tuples.rs`).
-//! A `[C; N]` array is also a polynomial over `C` (fixed-length dense form).
+//! A `[C; N]` array is also a polynomial over `C` (fixed-length dense form;
+//! the degree scan is hand-written — too bulky for a directive body).
 
-use batch_impl::{batch_impl_only, batch_trait};
+use batch_impl::batch_trait;
 
 use crate::op::{Additive, Multiplicative};
 use crate::tower::{
     AbelianGroup, CommutativeRing, Field, FreeModule, Group, Loop, Magma, Module, Monoid,
-    Quasigroup, Ring, Semigroup, Semiring, VectorSpace,
+    Polynomial, Quasigroup, Ring, Semigroup, Semiring, VectorSpace,
 };
 
-// ---- polynomials: a fixed-length coefficient array ----
+// ---- polynomials: a fixed-length coefficient array (hand-written) ----
 
-#[batch_impl_only(
-    #crate::tower::Polynomial:
-    <C: Ring<Additive, Multiplicative> + PartialEq + Clone, const N: usize> [C; N]
-        #Coefficient{C}
-        #degree{
-            let zero = <C as Monoid<Additive>>::identity();
-            let mut d = 0usize;
-            for i in (0..N).rev() {
-                if self[i] != zero {
-                    d = i;
-                    break;
-                }
+impl<C: Ring<Additive, Multiplicative> + PartialEq + Clone, const N: usize> Polynomial for [C; N] {
+    type Coefficient = C;
+
+    fn degree(&self) -> usize {
+        let zero = <C as Monoid<Additive>>::identity();
+        let mut d = 0usize;
+        for i in (0..N).rev() {
+            if self[i] != zero {
+                d = i;
+                break;
             }
-            d
         }
-        #coefficient{self[i].clone()},
-)]
-trait Polynomial: Sized + Clone {
-    type Coefficient;
-    fn degree(&self) -> usize;
-    fn coefficient(&self, i: usize) -> Self::Coefficient;
+        d
+    }
+
+    fn coefficient(&self, i: usize) -> Self::Coefficient {
+        self[i].clone()
+    }
 }
 
-#[batch_impl_only(
-    Magma<Additive> <T: Magma<Additive>, const N: usize> [T; N]
-        #combine{core::array::from_fn(|i| <T as Magma<Additive>>::combine(&self[i], &rhs[i]))},
-    Magma<Multiplicative> <T: Magma<Multiplicative>, const N: usize> [T; N]
-        #combine{core::array::from_fn(|i| <T as Magma<Multiplicative>>::combine(&self[i], &rhs[i]))},
-)]
-trait Magma<Op: Operator> {
-    fn combine(&self, rhs: &Self) -> Self;
-}
-
-#[batch_impl_only(
-    Monoid<Additive> <T: Monoid<Additive>, const N: usize> [T; N]
-        #identity{core::array::from_fn(|_| <T as Monoid<Additive>>::identity())},
-    Monoid<Multiplicative> <T: Monoid<Multiplicative>, const N: usize> [T; N]
-        #identity{core::array::from_fn(|_| <T as Monoid<Multiplicative>>::identity())},
-)]
-trait Monoid<Op: Operator>: Semigroup<Op> {
-    fn identity() -> Self;
-}
-
-#[batch_impl_only(
-    Group<Additive> <T: Group<Additive>, const N: usize> [T; N]
-        #inverse{core::array::from_fn(|i| <T as Group<Additive>>::inverse(&self[i]))},
-)]
-trait Group<Op: Operator>: Loop<Op> {
-    fn inverse(&self) -> Self;
-}
-
-#[batch_impl_only(
-    Module<Additive, Multiplicative> <T: Module<Additive, Multiplicative> + Copy, const N: usize> [T; N]
-        #Scalar{<T as Module<Additive, Multiplicative>>::Scalar}
-        #scale{core::array::from_fn(|i| <T as Module<Additive, Multiplicative>>::scale(s, v[i]))},
-)]
-trait Module<Oa: Operator, Om: Operator>: AbelianGroup<Oa> {
-    type Scalar;
-    fn scale(s: &Self::Scalar, v: Self) -> Self;
-}
-
-// Marker levels: one `batch_trait!` segment per trait (all components must
-// carry the level).
+// ---- one batch_trait! block: the component-wise tower (the `from_fn`
+// ---- bodies are one line each; the markers are plain lists) ----
 
 batch_trait! {
+    Magma: Magma<Additive> <T: Magma<Additive>, const N: usize> [T; N]
+        {fn combine(&self, rhs: &Self) -> Self {
+            core::array::from_fn(|i| <T as Magma<Additive>>::combine(&self[i], &rhs[i]))
+        }},
+        Magma<Multiplicative> <T: Magma<Multiplicative>, const N: usize> [T; N]
+        {fn combine(&self, rhs: &Self) -> Self {
+            core::array::from_fn(|i| <T as Magma<Multiplicative>>::combine(&self[i], &rhs[i]))
+        }};
     Semigroup: Semigroup<Additive> <T: Semigroup<Additive>, const N: usize> [T; N],
         Semigroup<Multiplicative> <T: Semigroup<Multiplicative>, const N: usize> [T; N];
+    Monoid: Monoid<Additive> <T: Monoid<Additive>, const N: usize> [T; N]
+        {fn identity() -> Self { core::array::from_fn(|_| <T as Monoid<Additive>>::identity()) }},
+        Monoid<Multiplicative> <T: Monoid<Multiplicative>, const N: usize> [T; N]
+        {fn identity() -> Self { core::array::from_fn(|_| <T as Monoid<Multiplicative>>::identity()) }};
     Quasigroup: Quasigroup<Additive> <T: Quasigroup<Additive>, const N: usize> [T; N];
     Loop: Loop<Additive> <T: Loop<Additive>, const N: usize> [T; N];
+    Group: Group<Additive> <T: Group<Additive>, const N: usize> [T; N]
+        {fn inverse(&self) -> Self {
+            core::array::from_fn(|i| <T as Group<Additive>>::inverse(&self[i]))
+        }};
     AbelianGroup: AbelianGroup<Additive> <T: AbelianGroup<Additive>, const N: usize> [T; N];
     Semiring: Semiring<Additive, Multiplicative> <T: Semiring<Additive, Multiplicative>, const N: usize> [T; N];
     Ring: Ring<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>, const N: usize> [T; N];
     CommutativeRing: CommutativeRing<Additive, Multiplicative> <T: CommutativeRing<Additive, Multiplicative>, const N: usize> [T; N];
+    Module: Module<Additive, Multiplicative> <T: Module<Additive, Multiplicative> + Copy, const N: usize> [T; N]
+        {type Scalar = <T as Module<Additive, Multiplicative>>::Scalar;
+         fn scale(s: &Self::Scalar, v: Self) -> Self {
+            core::array::from_fn(|i| <T as Module<Additive, Multiplicative>>::scale(s, v[i]))
+        }};
     VectorSpace: VectorSpace<Additive, Multiplicative> <T: VectorSpace<Additive, Multiplicative> + Copy, const N: usize> [T; N]
         where{Self::Scalar: Field<Additive, Multiplicative>};
     // `[T; N]` is the free module R^N when the components are scalars

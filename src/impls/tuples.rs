@@ -63,8 +63,7 @@ trait Group<Op: Operator>: Loop<Op> {
 // scalar. Empty for arity 1 (no predicate, no error).
 
 #[batch_impl_only(
-    Module<Additive, Multiplicative> ().1..=16 where{
-        @0..: @trait<>,
+    Module<Additive, Multiplicative> (<@trait<> >,).1..=16 where{
         @1..: Module<Additive, Multiplicative, Scalar = @0::Scalar>,
     } impl{(A@..,)} #Scalar{A0::Scalar} #scale{( @(@A::scale(&s, v.@0),).. )},
 )]

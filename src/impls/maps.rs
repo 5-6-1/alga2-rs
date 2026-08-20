@@ -4,7 +4,7 @@
 //! All four combine by (right-biased) union: the maps keep the right-hand
 //! value for colliding keys, which keeps the operation associative.
 
-use batch_impl::{batch_impl_only, batch_trait};
+use batch_impl::batch_trait;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::hash::Hash;
@@ -12,61 +12,45 @@ use std::hash::Hash;
 use crate::op::Additive;
 use crate::tower::{Magma, Monoid, Semigroup};
 
-#[batch_impl_only(
-    Magma<Additive> [
-        <K: Clone + Eq + Hash, V: Clone> HashMap<K, V> #combine{
-            let mut m = self.clone();
-            for (k, v) in rhs {
-                m.insert(k.clone(), v.clone());
-            }
-            m
-        },
-        <K: Clone + Eq + Hash> HashSet<K> #combine{
-            let mut s = self.clone();
-            for x in rhs {
-                s.insert(x.clone());
-            }
-            s
-        },
-        <K: Clone + Ord, V: Clone> BTreeMap<K, V> #combine{
-            let mut m = self.clone();
-            for (k, v) in rhs {
-                m.insert(k.clone(), v.clone());
-            }
-            m
-        },
-        <K: Clone + Ord> BTreeSet<K> #combine{
-            let mut s = self.clone();
-            for x in rhs {
-                s.insert(x.clone());
-            }
-            s
-        }
-    ]
-)]
-trait Magma<Op: Operator> {
-    fn combine(&self, rhs: &Self) -> Self;
-}
-
-#[batch_impl_only(
-    Monoid<Additive> [
-        <K: Clone + Eq + Hash, V: Clone> HashMap<K, V> #identity{HashMap::new()},
-        <K: Clone + Eq + Hash> HashSet<K> #identity{HashSet::new()},
-        <K: Clone + Ord, V: Clone> BTreeMap<K, V> #identity{BTreeMap::new()},
-        <K: Clone + Ord> BTreeSet<K> #identity{BTreeSet::new()},
-    ]
-)]
-trait Monoid<Op: Operator>: Semigroup<Op> {
-    fn identity() -> Self;
-}
-
 batch_trait! {
+    Magma: Magma<Additive> <K: Clone + Eq + Hash, V: Clone> HashMap<K, V>
+        {fn combine(&self, rhs: &Self) -> Self {
+            let mut m = self.clone();
+            for (k, v) in rhs { m.insert(k.clone(), v.clone()); }
+            m
+        }},
+        Magma<Additive> <K: Clone + Eq + Hash> HashSet<K>
+        {fn combine(&self, rhs: &Self) -> Self {
+            let mut s = self.clone();
+            for x in rhs { s.insert(x.clone()); }
+            s
+        }},
+        Magma<Additive> <K: Clone + Ord, V: Clone> BTreeMap<K, V>
+        {fn combine(&self, rhs: &Self) -> Self {
+            let mut m = self.clone();
+            for (k, v) in rhs { m.insert(k.clone(), v.clone()); }
+            m
+        }},
+        Magma<Additive> <K: Clone + Ord> BTreeSet<K>
+        {fn combine(&self, rhs: &Self) -> Self {
+            let mut s = self.clone();
+            for x in rhs { s.insert(x.clone()); }
+            s
+        }};
     Semigroup: Semigroup<Additive> [
         <K: Clone + Eq + Hash, V: Clone> HashMap<K, V>,
         <K: Clone + Eq + Hash> HashSet<K>,
         <K: Clone + Ord, V: Clone> BTreeMap<K, V>,
         <K: Clone + Ord> BTreeSet<K>,
     ];
+    Monoid: Monoid<Additive> <K: Clone + Eq + Hash, V: Clone> HashMap<K, V>
+        {fn identity() -> Self { HashMap::new() }},
+        Monoid<Additive> <K: Clone + Eq + Hash> HashSet<K>
+        {fn identity() -> Self { HashSet::new() }},
+        Monoid<Additive> <K: Clone + Ord, V: Clone> BTreeMap<K, V>
+        {fn identity() -> Self { BTreeMap::new() }},
+        Monoid<Additive> <K: Clone + Ord> BTreeSet<K>
+        {fn identity() -> Self { BTreeSet::new() }};
 }
 
 #[cfg(test)]
