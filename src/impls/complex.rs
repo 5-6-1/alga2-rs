@@ -18,7 +18,9 @@ use crate::tower::{
 // ---- simple levels: component-wise, one batch_trait! block ----
 
 batch_trait! {
-    Magma: @trait<Additive> <T: @trait<>> Complex<T>{
+    @with_add=@trait<Additive> <T: @trait<>> Complex<T>;
+    @with_mul=@trait<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
+    Magma: @with_add{
         fn combine(&self, rhs: &Self) -> Self {
             Complex::new(
                 <T as Magma<>>::combine(self.re(), rhs.re()),
@@ -26,7 +28,7 @@ batch_trait! {
             )
         }
     },
-        @trait<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>{
+        @with_mul{
         fn combine(&self, rhs: &Self) -> Self {
             Complex::new(
                 <T as Magma<Additive>>::combine(
@@ -43,21 +45,19 @@ batch_trait! {
             )
         }
     };
-    Semigroup: @trait<Additive> <T: @trait<>> Complex<T>,
-        @trait<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
-    Monoid: @trait<Additive> <T: @trait<>> Complex<T>{
+    Semigroup: @with_add,
+        @with_mul;
+    Monoid: [@with_add,@with_mul]impl{@trait<>}{
         fn identity() -> Self {
-            Complex::new(<T as Monoid<>>::identity(), <T as Monoid<>>::identity())
-        }
-    },
-        @trait<Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>{
-        fn identity() -> Self {
-            Complex::new(<T as Monoid<Multiplicative>>::identity(), <T as Monoid<Additive>>::identity())
+            // Real part follows the spec's operator (`0` under Additive, `1`
+            // under Multiplicative); the imaginary part is the additive
+            // identity (zero) either way.
+            Complex::new(<T as Monoid<>>::identity(), <T as Monoid<Additive>>::identity())
         }
     };
-    Quasigroup: @trait<Additive> <T: @trait<>> Complex<T>;
-    Loop: @trait<Additive> <T: @trait<>> Complex<T>;
-    Group: @trait<Additive> <T: @trait<>> Complex<T>{
+    Quasigroup: @with_add;
+    Loop: @with_add;
+    Group: @with_add{
         fn inverse(&self) -> Self {
             Complex::new(
                 <T as Group<>>::inverse(self.re()),
@@ -65,7 +65,7 @@ batch_trait! {
             )
         }
     };
-    AbelianGroup: @trait<Additive> <T: @trait<>> Complex<T>;
+    AbelianGroup: @with_add;
     Semiring: @trait<Additive, Multiplicative> <T: Ring<Additive, Multiplicative>> Complex<T>;
     Ring: @trait<Additive, Multiplicative> <T: @trait<>> Complex<T>;
     CommutativeRing: @trait<Additive, Multiplicative> <T: @trait<>> Complex<T>;
